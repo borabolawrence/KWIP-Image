@@ -1,0 +1,89 @@
+.kwip-media {
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.kwip-media p {
+    margin: 0 0 8px;
+}
+
+.kwip-media.is-busy {
+    opacity: .7;
+}
+
+.kwip-badge {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.6;
+}
+
+.kwip-badge--ok {
+    background: #d7f0dd;
+    color: #0a5c1e;
+}
+
+.kwip-badge--warn {
+    background: #fcf0c7;
+    color: #6b4a00;
+}
+
+.kwip-badge--error {
+    background: #fbdcdc;
+    color: #8a1f1f;
+}
+
+.kwip-badge--muted {
+    background: #e6e6e6;
+    color: #3c434a;
+}
+
+.kwip-media__summary {
+    display: block;
+    margin-top: 4px;
+    color: #50575e;
+}
+
+.kwip-media__actions .button {
+    margin: 0 6px 4px 0;
+}
+
+.kwip-media__actions .spinner {
+    float: none;
+    margin: 0 0 0 4px;
+    vertical-align: middle;
+}
+
+.kwip-media__message {
+    color: #b32d2e;
+}
+
+.kwip-media__message:empty {
+    display: none;
+}
+
+.kwip-media__details summary {
+    cursor: pointer;
+    color: #2271b1;
+}
+
+.kwip-media__details ul {
+    margin: 6px 0 0 16px;
+    list-style: disc;
+}
+
+.kwip-media__details li {
+    margin: 0 0 6px;
+    word-break: break-word;
+}
+
+.kwip-media__details .kwip-open {
+    margin-left: 6px;
+    white-space: nowrap;
+}
+
+.column-gwip_webp {
+    width: 22%;
+}
