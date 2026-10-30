@@ -203,7 +203,7 @@ final class KWIP_Admin {
 			);
 			$action_tab   = 'bulk';
 			$action_label = __( 'Optimize my images', 'kwip-image-plugin' );
-		} elseif ( 'active' !== $delivery ) {
+		} elseif ( ! KWIP_Delivery::is_delivering() ) {
 			$tone  = 'warn';
 			$title = __( 'Your images are optimized, but visitors are not seeing them yet', 'kwip-image-plugin' );
 			if ( in_array( $delivery, array( 'missing', 'manual' ), true ) ) {
@@ -320,9 +320,9 @@ final class KWIP_Admin {
 
 			<div class="kwip-tile">
 				<span class="kwip-tile__label"><?php esc_html_e( 'Visitors see optimized images', 'kwip-image-plugin' ); ?></span>
-				<?php if ( 'active' === $delivery ) : ?>
+				<?php if ( KWIP_Delivery::is_delivering() ) : ?>
 					<span class="kwip-chip kwip-chip--ok"><span class="dashicons dashicons-yes-alt" aria-hidden="true"></span><?php esc_html_e( 'On', 'kwip-image-plugin' ); ?></span>
-					<span class="kwip-tile__sub"><?php esc_html_e( 'Modern browsers get the lighter images automatically.', 'kwip-image-plugin' ); ?></span>
+					<span class="gwip-tile__sub"><?php echo esc_html( 'page' === $delivery ? __( 'Delivered through the page, so it works with any server, CDN or cache.', 'kwip-image-plugin' ) : __( 'Modern browsers get the lighter images automatically.', 'kwip-image-plugin' ) ); ?></span>
 				<?php else : ?>
 					<span class="kwip-chip kwip-chip--warn"><span class="dashicons dashicons-warning" aria-hidden="true"></span><?php echo esc_html( in_array( $delivery, array( 'missing', 'manual' ), true ) ? __( 'Needs attention', 'kwip-image-plugin' ) : __( 'Off', 'kwip-image-plugin' ) ); ?></span>
 					<span class="kwip-tile__sub"><?php esc_html_e( 'Visitors currently receive your original images.', 'kwip-image-plugin' ); ?></span>
@@ -424,6 +424,22 @@ final class KWIP_Admin {
 					</span>
 				</label>
 
+				<p class="description gwip-platform">
+					<?php
+					if ( 'none' === KWIP_Delivery::active_method() ) {
+						esc_html_e( 'Visitors currently receive your original images.', 'kwip-image-plugin' );
+					} else {
+						echo esc_html(
+							sprintf(
+								__( 'Your server: %1$s. Optimized images are delivered with the %2$s.', 'kwip-image-plugin' ),
+								KWIP_Platform::label(),
+								KWIP_Delivery::method_label()
+							)
+						);
+					}
+					?>
+				</p>
+
 				<p class="kwip-reassure"><span class="dashicons dashicons-lock" aria-hidden="true"></span><?php esc_html_e( 'Your original images are always kept. Nothing is ever deleted or overwritten.', 'kwip-image-plugin' ); ?></p>
 			</section>
 
@@ -432,6 +448,50 @@ final class KWIP_Admin {
 				<div class="kwip-advanced__body">
 
 					<div class="kwip-field" id="kwip-quality-field">
+
+					<?php
+					$methods = array(
+						'auto'   => array(
+							'lightbulb',
+							__( 'Automatic (recommended)', 'kwip-image-plugin' ),
+							'server' === KWIP_Platform::recommended_method()
+								? __( 'We pick the best method for your server. Right now that is the server method.', 'kwip-image-plugin' )
+								: __( 'We pick the best method for your server. Right now that is the page method.', 'kwip-image-plugin' ),
+						),
+						'server' => array(
+							'database',
+							__( 'Server method', 'kwip-image-plugin' ),
+							KWIP_Platform::supports_server_rules()
+								? __( 'Fastest, and it changes nothing in your pages. Works on Apache and LiteSpeed. Some CDNs ignore it.', 'kwip-image-plugin' )
+								: __( 'Not available on your server, because it cannot be set up from here.', 'kwip-image-plugin' ),
+						),
+						'page'   => array(
+							'editor-code',
+							__( 'Page method', 'kwip-image-plugin' ),
+							__( 'Works on any server, CDN or cache. Images in your pages are wrapped so each visitor\'s browser picks the lighter file. Images added by some page builders may be missed.', 'kwip-image-plugin' ),
+						),
+					);
+					?>
+					<fieldset class="gwip-field">
+						<legend><strong><?php esc_html_e( 'How optimized images reach visitors', 'kwip-image-plugin' ); ?></strong></legend>
+						<p class="description"><?php esc_html_e( 'Most sites should leave this on Automatic.', 'kwip-image-plugin' ); ?></p>
+						<div class="gwip-presets">
+							<?php foreach ( $methods as $key => $method ) : ?>
+								<label class="kwip-preset">
+									<input type="radio" name="<?php echo esc_attr( $name ); ?>[method]" value="<?php echo esc_attr( $key ); ?>"
+										<?php checked( $key, (string) $s['method'] ); ?>
+										<?php disabled( 'server' === $key && ! KWIP_Platform::supports_server_rules() ); ?>>
+									<span class="kwip-preset__body">
+										<span class="dashicons dashicons-<?php echo esc_attr( $method[0] ); ?>" aria-hidden="true"></span>
+										<strong><?php echo esc_html( $method[1] ); ?></strong>
+										<span class="description"><?php echo esc_html( $method[2] ); ?></span>
+									</span>
+								</label>
+							<?php endforeach; ?>
+						</div>
+					</fieldset>
+
+
 						<label for="kwip-quality"><strong><?php esc_html_e( 'Exact quality (1 to 100)', 'kwip-image-plugin' ); ?></strong></label>
 						<div class="kwip-quality">
 							<input type="range" id="kwip-quality-range" min="1" max="100" step="1"
@@ -511,6 +571,15 @@ final class KWIP_Admin {
 				$r['wp_ok'],
 				sprintf( __( 'WordPress version %s is supported', 'kwip-image-plugin' ), $r['wp_version'] ),
 				sprintf( __( 'WordPress %s or newer is required. Please update WordPress.', 'kwip-image-plugin' ), KWIP_MIN_WP ),
+			),
+			array(
+				true,
+				sprintf(
+					__( 'Your server (%1$s) is supported. Delivery method: %2$s.', 'kwip-image-plugin' ),
+					KWIP_Platform::label(),
+					KWIP_Delivery::method_label()
+				),
+				'',
 			),
 		);
 
@@ -702,9 +771,10 @@ final class KWIP_Admin {
 		$flash = KWIP_Delivery::take_flash();
 
 		$descriptions = array(
-			'active'  => __( 'On. Visitors with a modern browser receive the lighter images automatically; everyone else gets your originals.', 'kwip-image-plugin' ),
+			'active'  => __( 'On, using the server method. Visitors with a modern browser receive the lighter images automatically; everyone else gets your originals.', 'kwip-image-plugin' ),
+			'page'    => __( 'On, using the page method. Images in your pages are wrapped so each visitor\'s browser picks the lighter file. This works with any server, CDN or cache.', 'kwip-image-plugin' ),
 			'missing' => __( 'Not working yet. The server setup is missing. Click "Fix automatically".', 'kwip-image-plugin' ),
-			'manual'  => __( 'Needs manual setup. This server is not Apache or LiteSpeed, so it cannot be set up automatically. Send the rules below to your hosting provider or developer.', 'kwip-image-plugin' ),
+			'manual'  => __( 'Needs manual setup. This server cannot be set up automatically. Choose the page method in Settings, or send the rules below to your hosting provider.', 'kwip-image-plugin' ),
 			'stale'   => __( 'Off, but leftover server rules are still in place. Click "Fix automatically" to clean up.', 'kwip-image-plugin' ),
 			'off'     => __( 'Off. Visitors receive your original images. You can turn this on in Settings.', 'kwip-image-plugin' ),
 		);

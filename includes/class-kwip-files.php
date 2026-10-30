@@ -253,4 +253,29 @@ final class KWIP_Files {
 			wp_delete_file( $temp );
 		}
 	}
+
+
+	/** Filesystem path for an uploads image URL, or null if it is not in the uploads folder. */
+	public static function file_for_url( string $url ): ?string {
+		$uploads = wp_get_upload_dir();
+		if ( ! empty( $uploads['error'] ) ) {
+			return null;
+		}
+
+		$strip = static function ( string $value ): string {
+			return (string) preg_replace( '#^https?:#i', '', $value );
+		};
+
+		$base  = rtrim( $strip( (string) $uploads['baseurl'] ), '/' ) . '/';
+		$clean = $strip( explode( '?', $url, 2 )[0] );
+		if ( ! str_starts_with( $clean, $base ) ) {
+			return null;
+		}
+
+		$relative = rawurldecode( substr( $clean, strlen( $base ) ) );
+		if ( '' === $relative || str_contains( $relative, '..' ) ) {
+			return null;
+		}
+		return trailingslashit( (string) $uploads['basedir'] ) . $relative;
+	}
 }

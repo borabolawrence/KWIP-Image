@@ -327,9 +327,19 @@ final class KWIP_Scan {
 			'sslverify'   => apply_filters( 'https_local_ssl_verify', false ),
 		);
 
+		$page_webp = array();
+		foreach ( $urls as $candidate ) {
+			if ( preg_match( '/\.(?:jpe?g|png)\.webp$/i', (string) wp_parse_url( $candidate, PHP_URL_PATH ) ) ) {
+				$page_webp[ explode( '?', $candidate, 2 )[0] ] = true;
+			}
+		}
+
 		foreach ( $urls as $url ) {
 			$ext = strtolower( pathinfo( (string) wp_parse_url( $url, PHP_URL_PATH ), PATHINFO_EXTENSION ) );
 			if ( ! in_array( $ext, array( 'jpg', 'jpeg', 'png', 'webp', 'gif', 'svg', 'avif' ), true ) ) {
+				continue;
+			}
+			if ( 'webp' === $ext && isset( $page_webp[ explode( '?', $url, 2 )[0] ] ) ) {
 				continue;
 			}
 			++$counts['found'];
@@ -342,6 +352,11 @@ final class KWIP_Scan {
 			}
 			if ( ! in_array( $ext, array( 'jpg', 'jpeg', 'png' ), true ) ) {
 				++$counts['other'];
+				continue;
+			}
+			if ( isset( $page_webp[ explode( '?', $url, 2 )[0] . '.webp' ] ) ) {
+				++$counts['webp'];
+				$items[] = self::item( 'webp', $url, __( 'Delivered as WebP through the page.', 'kwip-image-plugin' ), $labels['webp'] );
 				continue;
 			}
 			if ( $tested >= self::MAX_TESTED || ( microtime( true ) - $start ) > self::TIME_BUDGET ) {
@@ -441,28 +456,8 @@ final class KWIP_Scan {
 		);
 	}
 
-	/** Filesystem path of an uploads image URL, or null if it is not in the uploads folder. */
 	private static function file_for_url( string $url ): ?string {
-		$uploads = wp_get_upload_dir();
-		if ( ! empty( $uploads['error'] ) ) {
-			return null;
-		}
-
-		$strip = static function ( string $value ): string {
-			return (string) preg_replace( '#^https?:#i', '', $value );
-		};
-
-		$base  = rtrim( $strip( (string) $uploads['baseurl'] ), '/' ) . '/';
-		$clean = $strip( explode( '?', $url, 2 )[0] );
-		if ( ! str_starts_with( $clean, $base ) ) {
-			return null;
-		}
-
-		$relative = rawurldecode( substr( $clean, strlen( $base ) ) );
-		if ( '' === $relative || str_contains( $relative, '..' ) ) {
-			return null;
-		}
-		return trailingslashit( (string) $uploads['basedir'] ) . $relative;
+		return KWIP_Files::file_for_url( $url );
 	}
 
 	/** @return array<string, string> */

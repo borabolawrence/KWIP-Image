@@ -32,6 +32,7 @@ final class KWIP_Settings {
 			'auto_convert' => true,
 			'keep_backups' => true,
 			'delivery'     => 'webp_fallback',
+			'method'       => 'auto',
 			'min_savings'  => 5,
 			'allow_larger' => false,
 		);
@@ -170,6 +171,8 @@ final class KWIP_Settings {
 
 		$delivery          = isset( $input['delivery'] ) ? sanitize_key( $input['delivery'] ) : $defaults['delivery'];
 		$clean['delivery'] = in_array( $delivery, array( 'webp_fallback', 'off' ), true ) ? $delivery : $defaults['delivery'];
+		$method          = isset( $input['method'] ) ? sanitize_key( $input['method'] ) : $defaults['method'];
+		$clean['method'] = in_array( $method, array( 'auto', 'server', 'page' ), true ) ? $method : $defaults['method'];
 
 		$min_savings          = isset( $input['min_savings'] ) ? (int) $input['min_savings'] : $defaults['min_savings'];
 		$clean['min_savings'] = max( 0, min( 90, $min_savings ) );

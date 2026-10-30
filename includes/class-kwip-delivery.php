@@ -65,13 +65,13 @@ final class KWIP_Delivery {
 	}
 
 
+	/** Write or remove the server rules to match the chosen delivery method. */
 	public static function apply(): true|WP_Error {
-		$settings = KWIP_Settings::get();
-		return 'webp_fallback' === $settings['delivery'] ? self::write_rules() : self::remove_rules();
+		return 'server' === self::active_method() ? self::write_rules() : self::remove_rules();
 	}
 
 	private static function write_rules(): true|WP_Error {
-		if ( ! self::is_apache() ) {
+		if ( ! KWIP_Platform::supports_server_rules() ) {
 			return new WP_Error( 'gwip_server', __( 'Automatic WebP delivery works on Apache and LiteSpeed. This server looks different, so the rules must be added manually. See Server status for the rules.', 'kwip-image-plugin' ) );
 		}
 
@@ -104,32 +104,28 @@ final class KWIP_Delivery {
 	 * @return array{key:string,file:string}
 	 */
 	public static function state(): array {
-		$settings = KWIP_Settings::get();
-		$wanted   = 'webp_fallback' === $settings['delivery'];
-		$file     = self::htaccess_path();
-		$present  = is_file( $file ) && self::has_rules( extract_from_markers( $file, self::MARKER ) );
+		$method  = self::active_method();
+		$file    = self::htaccess_path();
+		$present = is_file( $file ) && self::has_rules( extract_from_markers( $file, self::MARKER ) );
 
-		if ( $wanted && $present ) {
-			$key = 'active';
-		} elseif ( $wanted && ! self::is_apache() ) {
-			$key = 'manual';
-		} elseif ( $wanted ) {
-			$key = 'missing';
-		} elseif ( $present ) {
-			$key = 'stale';
+		if ( 'server' === $method ) {
+			$key = $present ? 'active' : ( KWIP_Platform::supports_server_rules() ? 'missing' : 'manual' );
+		} elseif ( 'page' === $method ) {
+			$key = 'page';
 		} else {
-			$key = 'off';
+			$key = $present ? 'stale' : 'off';
 		}
+
 		return array(
 			'key'  => $key,
 			'file' => $file,
 		);
 	}
 
-	private static function is_apache(): bool {
-		global $is_apache; 
-		return ! empty( $is_apache );
-	}
+	// private static function is_apache(): bool {
+	// 	global $is_apache; 
+	// 	return ! empty( $is_apache );
+	// }
 
 	private static function htaccess_path(): string {
 		require_once ABSPATH . 'wp-admin/includes/file.php';
@@ -148,7 +144,8 @@ final class KWIP_Delivery {
 	 *
 	 * @return array<string, mixed> type, message, optional rows.
 	 */
-	public static function test(): array {
+	private static function test_server(): array {
+	// public static function test(): array {
 		$url = self::find_test_url();
 		if ( null === $url ) {
 			return array(
@@ -206,11 +203,22 @@ final class KWIP_Delivery {
 		);
 
 		if ( $ok_webp && $ok_plain ) {
+			$type    = $ok_vary ? 'success' : 'warning';
 			$message = $ok_vary
 				? __( 'WebP delivery is working.', 'kwip-image-plugin' )
 				: __( 'WebP delivery is working, but the "Vary: Accept" header was not detected. Caches and CDNs may serve the wrong version.', 'kwip-image-plugin' );
+
+			$cdn = KWIP_Platform::detect_cdn( $with );
+			if ( null !== $cdn ) {
+				$type     = 'warning';
+				$message .= ' ' . sprintf(
+					__( 'A CDN (%s) was detected. CDNs often ignore the "Vary" header, so some visitors could receive the wrong version. The page method is the safer choice.', 'kwip-image-plugin' ),
+					$cdn
+				);
+			}
+
 			return array(
-				'type'    => $ok_vary ? 'success' : 'warning',
+				'type'    => $type,
 				'message' => $message,
 				'rows'    => $rows,
 			);
@@ -222,6 +230,82 @@ final class KWIP_Delivery {
 			'rows'    => $rows,
 		);
 	}
+
+
+
+	/**
+	 * @return array<string, mixed>
+	 */
+	public static function test(): array {
+		return 'page' === self::active_method() ? self::test_page() : self::test_server();
+	}
+
+	/**
+	 * Page method: load the home page and look for wrapped images.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private static function test_page(): array {
+		$response = wp_remote_get(
+			add_query_arg( 'gwip_test', (string) time(), home_url( '/' ) ),
+			array(
+				'timeout'             => 15,
+				'redirection'         => 3,
+				'limit_response_size' => 3 * MB_IN_BYTES,
+				'sslverify'           => apply_filters( 'https_local_ssl_verify', false ),
+				'headers'             => array( 'Accept' => 'text/html,application/xhtml+xml' ),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return array(
+				'type'    => 'error',
+				'message' => sprintf(
+					__( 'The home page could not be loaded (%s).', 'guanzon-webp-image-plugin' ),
+					$response->get_error_message()
+				),
+			);
+		}
+
+		$code = (int) wp_remote_retrieve_response_code( $response );
+		if ( 200 !== $code ) {
+			return array(
+				'type'    => 'error',
+				'message' => sprintf(
+					__( 'The home page returned HTTP %d.', 'kwip-image-plugin' ),
+					$code
+				),
+			);
+		}
+
+		$html    = (string) wp_remote_retrieve_body( $response );
+		$wrapped = (int) preg_match_all( '/<picture\b[^>]*class=["\'][^"\']*gwip-picture/i', $html );
+		$images  = (int) preg_match_all( '/<img\b/i', $html );
+
+		if ( $wrapped > 0 ) {
+			return array(
+				'type'    => 'success',
+				'message' => sprintf(
+					_n( 'The page method is working. %d image on your home page is delivered through it.', 'The page method is working. %d images on your home page are delivered through it.', $wrapped, 'kwip-image-plugin' ),
+					$wrapped
+				),
+			);
+		}
+		if ( 0 === $images ) {
+			return array(
+				'type'    => 'info',
+				'message' => __( 'No images were found on your home page, so there was nothing to check. Use "Check a page" on a page that has images.', 'kwip-image-plugin' ),
+			);
+		}
+		return array(
+			'type'    => 'warning',
+			'message' => __( 'The page method is on, but no image on your home page was wrapped. Either none of them have optimized copies yet, or a cache is showing an older version of the page. Clear your cache and test again.', 'kwip-image-plugin' ),
+		);
+	}
+
+
+
+
 
 	private static function find_test_url(): ?string {
 		$ids = get_posts(
@@ -273,5 +357,36 @@ final class KWIP_Delivery {
 
 	private static function flash_key(): string {
 		return 'gwip_flash_' . get_current_user_id();
+	}
+
+
+	/** @return string server | page | none */
+	public static function active_method(): string {
+		$settings = KWIP_Settings::get();
+		if ( 'webp_fallback' !== $settings['delivery'] ) {
+			return 'none';
+		}
+
+		$method = (string) $settings['method'];
+		if ( 'page' === $method ) {
+			return 'page';
+		}
+		if ( 'server' === $method ) {
+			return 'server';
+		}
+		return KWIP_Platform::recommended_method();
+	}
+
+	/** True when visitors are being served optimized images by some method. */
+	public static function is_delivering(): bool {
+		return in_array( self::state()['key'], array( 'active', 'page' ), true );
+	}
+
+	public static function method_label(): string {
+		return match ( self::active_method() ) {
+			'server' => __( 'server method', 'kwip-image-plugin' ),
+			'page'   => __( 'page method', 'kwip-image-plugin' ),
+			default  => __( 'none (turned off)', 'kwip-image-plugin' ),
+		};
 	}
 }

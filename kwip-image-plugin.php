@@ -3,7 +3,7 @@
 /**
  * Plugin Name:       KWIP Image 
  * Description:       Converts supported images to WebP to reduce image size and improve loading performance, keeping originals and an original-format fallback.
- * Version:           0.2.4
+ * Version:           0.3.0
  * Requires at least: 6.0
  * Requires PHP:      8.2
  * Author:            kiyouh.
@@ -55,6 +55,8 @@ require_once KWIP_PATH . 'includes/class-kwip-bulk.php';
 require_once KWIP_PATH . 'includes/class-kwip-scan.php';
 require_once KWIP_PATH . 'includes/class-kwip-media.php';
 require_once KWIP_PATH . 'includes/class-kwip-admin.php';
+require_once KWIP_PATH . 'includes/class-kwip-platform.php';
+require_once KWIP_PATH . 'includes/class-kwip-picture.php';
 require_once KWIP_PATH . 'includes/class-kwip-delivery.php';
 
 add_action(
@@ -64,6 +66,7 @@ add_action(
 		KWIP_Converter::init();
 		KWIP_Queue::init();
 		KWIP_Delivery::init();
+		KWIP_Picture::init();
 		if (is_admin()) {
 			KWIP_Admin::init();
 			KWIP_Media::init();
