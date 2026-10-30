@@ -77,29 +77,29 @@ final class KWIP_Files {
 	 */
 	public static function validate_source( string $path, array $allowed_formats ): array|WP_Error {
 		if ( ! self::is_inside_uploads( $path ) ) {
-			return new WP_Error( 'gwip_path', __( 'The file is not inside the uploads directory.', 'kwip-image-plugin' ) );
+			return new WP_Error( 'kwip_path', __( 'The file is not inside the uploads directory.', 'kwip-image-plugin' ) );
 		}
 		if ( ! is_file( $path ) || ! is_readable( $path ) ) {
-			return new WP_Error( 'gwip_unreadable', __( 'The file is missing or cannot be read.', 'kwip-image-plugin' ) );
+			return new WP_Error( 'kwip_unreadable', __( 'The file is missing or cannot be read.', 'kwip-image-plugin' ) );
 		}
 
 		$mime = wp_get_image_mime( $path );
 		if ( false === $mime || ! isset( self::SOURCE_FORMATS[ $mime ] ) ) {
-			return new WP_Error( 'gwip_unsupported', __( 'Not a supported JPEG or PNG image.', 'kwip-image-plugin' ) );
+			return new WP_Error( 'kwip_unsupported', __( 'Not a supported JPEG or PNG image.', 'kwip-image-plugin' ) );
 		}
 
 		$format = self::SOURCE_FORMATS[ $mime ];
 		if ( ! in_array( $format, $allowed_formats, true ) ) {
-			return new WP_Error( 'gwip_format_disabled', __( 'Conversion of this image type is turned off in the settings.', 'kwip-image-plugin' ) );
+			return new WP_Error( 'kwip_format_disabled', __( 'Conversion of this image type is turned off in the settings.', 'kwip-image-plugin' ) );
 		}
 
 		if ( 'png' === $format && self::is_animated_png( $path ) ) {
-			return new WP_Error( 'gwip_animated', __( 'Animated PNG files are skipped to preserve the animation.', 'kwip-image-plugin' ) );
+			return new WP_Error( 'kwip_animated', __( 'Animated PNG files are skipped to preserve the animation.', 'kwip-image-plugin' ) );
 		}
 
 		$size = filesize( $path );
 		if ( false === $size || $size < 1 ) {
-			return new WP_Error( 'gwip_empty', __( 'The file is empty.', 'kwip-image-plugin' ) );
+			return new WP_Error( 'kwip_empty', __( 'The file is empty.', 'kwip-image-plugin' ) );
 		}
 
 		return array(
@@ -138,7 +138,7 @@ final class KWIP_Files {
 		$needed = ( $source_size * 2 ) + MB_IN_BYTES;
 		if ( $free < $needed ) {
 			return new WP_Error(
-				'gwip_disk_space',
+				'kwip_disk_space',
 				sprintf(
 					__( 'Not enough free disk space (%1$s free, %2$s needed).', 'kwip-image-plugin' ),
 					(string) size_format( (int) $free ),
@@ -156,10 +156,10 @@ final class KWIP_Files {
 	 */
 	public static function verify_webp( string $path, ?int $width = null, ?int $height = null ): true|WP_Error {
 		if ( ! is_file( $path ) || ! is_readable( $path ) ) {
-			return new WP_Error( 'gwip_verify_missing', __( 'The generated WebP file does not exist.', 'kwip-image-plugin' ) );
+			return new WP_Error( 'kwip_verify_missing', __( 'The generated WebP file does not exist.', 'kwip-image-plugin' ) );
 		}
 		if ( (int) filesize( $path ) < 1 ) {
-			return new WP_Error( 'gwip_verify_empty', __( 'The generated WebP file is empty.', 'kwip-image-plugin' ) );
+			return new WP_Error( 'kwip_verify_empty', __( 'The generated WebP file is empty.', 'kwip-image-plugin' ) );
 		}
 
 		$handle = @fopen( $path, 'rb' );
@@ -168,18 +168,18 @@ final class KWIP_Files {
 			fclose( $handle );
 		}
 		if ( ! is_string( $head ) || 12 !== strlen( $head ) || 'RIFF' !== substr( $head, 0, 4 ) || 'WEBP' !== substr( $head, 8, 4 ) ) {
-			return new WP_Error( 'gwip_verify_header', __( 'The generated file is not a valid WebP container.', 'kwip-image-plugin' ) );
+			return new WP_Error( 'kwip_verify_header', __( 'The generated file is not a valid WebP container.', 'kwip-image-plugin' ) );
 		}
 		if ( 'image/webp' !== wp_get_image_mime( $path ) ) {
-			return new WP_Error( 'gwip_verify_mime', __( 'The generated file is not recognised as WebP.', 'kwip-image-plugin' ) );
+			return new WP_Error( 'kwip_verify_mime', __( 'The generated file is not recognised as WebP.', 'kwip-image-plugin' ) );
 		}
 
 		$dims = wp_getimagesize( $path );
 		if ( ! is_array( $dims ) || (int) $dims[0] < 1 || (int) $dims[1] < 1 ) {
-			return new WP_Error( 'gwip_verify_dimensions', __( 'The generated WebP dimensions could not be read.', 'kwip-image-plugin' ) );
+			return new WP_Error( 'kwip_verify_dimensions', __( 'The generated WebP dimensions could not be read.', 'kwip-image-plugin' ) );
 		}
 		if ( null !== $width && null !== $height && ( (int) $dims[0] !== $width || (int) $dims[1] !== $height ) ) {
-			return new WP_Error( 'gwip_verify_mismatch', __( 'The generated WebP has different dimensions than expected.', 'kwip-image-plugin' ) );
+			return new WP_Error( 'kwip_verify_mismatch', __( 'The generated WebP has different dimensions than expected.', 'kwip-image-plugin' ) );
 		}
 
 		return true;
@@ -231,12 +231,12 @@ final class KWIP_Files {
 
 		if ( ! $valid ) {
 			self::discard_temp( $temp );
-			return new WP_Error( 'gwip_publish_invalid', __( 'The generated file could not be placed safely.', 'kwip-image-plugin' ) );
+			return new WP_Error( 'kwip_publish_invalid', __( 'The generated file could not be placed safely.', 'kwip-image-plugin' ) );
 		}
 
 		if ( ! @rename( $temp, $destination ) ) {
 			self::discard_temp( $temp );
-			return new WP_Error( 'gwip_publish_failed', __( 'The generated file could not be saved. Check folder permissions.', 'kwip-image-plugin' ) );
+			return new WP_Error( 'kwip_publish_failed', __( 'The generated file could not be saved. Check folder permissions.', 'kwip-image-plugin' ) );
 		}
 
 		$stat = @stat( dirname( $destination ) );

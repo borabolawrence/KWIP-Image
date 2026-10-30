@@ -1,7 +1,7 @@
 (function ($) {
 	'use strict';
 
-	if (typeof gwipMedia === 'undefined') {
+	if (typeof kwipMedia === 'undefined') {
 		return;
 	}
 
@@ -12,7 +12,7 @@
 	}
 
 	function fail($box, message) {
-		message = message || gwipMedia.i18n.error;
+		message = message || kwipMedia.i18n.error;
 		$box.removeClass('is-busy').removeAttr('aria-busy');
 		$box.find('.kwip-action').prop('disabled', false);
 		$box.find('.spinner').removeClass('is-active');
@@ -25,13 +25,13 @@
 		$box.find('.kwip-action').prop('disabled', true);
 		$box.find('.spinner').addClass('is-active');
 		$box.find('.kwip-media__message').text('');
-		announce(gwipMedia.i18n.working);
+		announce(kwipMedia.i18n.working);
 
-		$.post(gwipMedia.ajaxUrl, {
-			action: 'gwip_media',
+		$.post(kwipMedia.ajaxUrl, {
+			action: 'kwip_media',
 			op: $button.data('op'),
 			id: $box.data('id'),
-			nonce: gwipMedia.nonce
+			nonce: kwipMedia.nonce
 		})
 			.done(function (response) {
 				if (response && response.success) {
@@ -57,11 +57,11 @@
 			return;
 		}
 
-		if ('restore' === $button.data('op') && window.gwipConfirm) {
-			window.gwipConfirm({
-				title: gwipMedia.i18n.restoreTitle,
-				message: gwipMedia.i18n.restoreMessage,
-				confirmLabel: gwipMedia.i18n.restoreButton,
+		if ('restore' === $button.data('op') && window.kwipConfirm) {
+			window.kwipConfirm({
+				title: kwipMedia.i18n.restoreTitle,
+				message: kwipMedia.i18n.restoreMessage,
+				confirmLabel: kwipMedia.i18n.restoreButton,
 				tone: 'danger'
 			}).then(function (confirmed) {
 				if (confirmed) {

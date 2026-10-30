@@ -11,8 +11,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 final class KWIP_Media {
 
-	private const NONCE_ACTION = 'gwip_media';
-	private const FILTER_VAR = 'gwip_filter';
+	private const NONCE_ACTION = 'kwip_media';
+	private const FILTER_VAR = 'kwip_filter';
 
 	private static bool $assets_loaded = false;
 
@@ -22,7 +22,7 @@ final class KWIP_Media {
 		add_filter( 'attachment_fields_to_edit', array( __CLASS__, 'add_field' ), 10, 2 );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'maybe_enqueue' ) );
 		add_action( 'wp_enqueue_media', array( __CLASS__, 'enqueue' ) );
-		add_action( 'wp_ajax_gwip_media', array( __CLASS__, 'handle_ajax' ) );
+		add_action( 'wp_ajax_kwip_media', array( __CLASS__, 'handle_ajax' ) );
 		add_filter( 'views_upload', array( __CLASS__, 'add_view' ) );
 		add_action( 'pre_get_posts', array( __CLASS__, 'filter_query' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'filter_notice' ) );
@@ -31,13 +31,13 @@ final class KWIP_Media {
 
 	public static function add_column( array $columns ): array {
 		if ( current_user_can( 'manage_options' ) ) {
-			$columns['gwip_webp'] = __( 'WebP', 'kwip-image-plugin' );
+			$columns['kwip_webp'] = __( 'WebP', 'kwip-image-plugin' );
 		}
 		return $columns;
 	}
 
 	public static function render_column( string $column_name, int $post_id ): void {
-		if ( 'gwip_webp' !== $column_name || ! self::can_manage( $post_id ) ) {
+		if ( 'kwip_webp' !== $column_name || ! self::can_manage( $post_id ) ) {
 			return;
 		}
 		if ( ! self::is_candidate( $post_id ) ) {
@@ -49,7 +49,7 @@ final class KWIP_Media {
 
 	public static function add_field( array $fields, WP_Post $post ): array {
 		if ( self::can_manage( $post->ID ) && self::is_candidate( $post->ID ) ) {
-			$fields['gwip_webp'] = array(
+			$fields['kwip_webp'] = array(
 				'label' => __( 'WebP', 'kwip-image-plugin' ),
 				'input' => 'html',
 				'html'  => self::render( $post->ID ),
@@ -83,7 +83,7 @@ final class KWIP_Media {
 		wp_enqueue_script( 'kwip-media', KWIP_URL . 'assets/js/media.js', array( 'jquery', 'wp-a11y', 'kwip-modal' ), KWIP_VERSION, true );
 		wp_localize_script(
 			'kwip-media',
-			'gwipMedia',
+			'kwipMedia',
 			array(
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 				'nonce'   => wp_create_nonce( self::NONCE_ACTION ),
@@ -196,7 +196,7 @@ final class KWIP_Media {
 			admin_url( 'upload.php' )
 		);
 
-		$views['gwip_optimized'] = sprintf(
+		$views['kwip_optimized'] = sprintf(
 			'<a href="%1$s"%2$s>%3$s <span class="count">(%4$s)</span></a>',
 			esc_url( $url ),
 			$current ? ' class="current" aria-current="page"' : '',
@@ -301,9 +301,10 @@ final class KWIP_Media {
 
 		$raw    = ( isset( $data['status'] ) && is_string( $data['status'] ) ) ? $data['status'] : 'none';
 		$status = isset( $badges[ $raw ] ) ? $raw : 'none';
-		if ( 'none' === $raw && KWIP_Queue::is_queued( $id ) ) {
-			$raw = 'queued';
+		if ( 'none' === $status && KWIP_Queue::is_queued( $id ) ) {
+			$status = 'queued';
 		}
+
 		list( $tone, $label ) = $badges[ $status ];
 
 		$files  = ( isset( $data['files'] ) && is_array( $data['files'] ) ) ? $data['files'] : array();
@@ -425,9 +426,9 @@ final class KWIP_Media {
 		$labels = array(
 			'not_smaller'          => __( 'the WebP was not smaller than the original.', 'kwip-image-plugin' ),
 			'below_threshold'      => __( 'the saving was below the minimum set in Settings.', 'kwip-image-plugin' ),
-			'gwip_format_disabled' => __( 'this image type is turned off in Settings.', 'kwip-image-plugin' ),
-			'gwip_unsupported'     => __( 'not a supported JPEG or PNG image.', 'kwip-image-plugin' ),
-			'gwip_animated'        => __( 'animated images are left unchanged.', 'kwip-image-plugin' ),
+			'kwip_format_disabled' => __( 'this image type is turned off in Settings.', 'kwip-image-plugin' ),
+			'kwip_unsupported'     => __( 'not a supported JPEG or PNG image.', 'kwip-image-plugin' ),
+			'kwip_animated'        => __( 'animated images are left unchanged.', 'kwip-image-plugin' ),
 		);
 		if ( isset( $labels[ $code ] ) ) {
 			return $labels[ $code ];

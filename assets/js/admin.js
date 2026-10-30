@@ -12,11 +12,11 @@
 		var decimals = parseInt(node.getAttribute('data-decimals') || '0', 10);
 		var suffix = node.getAttribute('data-suffix') || '';
 		var finalText = node.getAttribute('data-final') || node.textContent;
-		var token = (node.gwipToken || 0) + 1;
+		var token = (node.kwipToken || 0) + 1;
 		var start = null;
 		var duration = 800;
 
-		node.gwipToken = token;
+		node.kwipToken = token;
 		node.setAttribute('data-final', finalText);
 
 		if (reduceMotion || 0 === target) {
@@ -32,7 +32,7 @@
 		}
 
 		function frame(now) {
-			if (node.gwipToken !== token) {
+			if (node.kwipToken !== token) {
 				return;
 			}
 			if (null === start) {
@@ -119,9 +119,9 @@
 			}
 			if (window.history) {
 				if ('push' === history && window.history.pushState) {
-					window.history.pushState({ gwipTab: slug }, '', tab.href);
+					window.history.pushState({ kwipTab: slug }, '', tab.href);
 				} else if ('replace' === history && window.history.replaceState) {
-					window.history.replaceState({ gwipTab: slug }, '', tab.href);
+					window.history.replaceState({ kwipTab: slug }, '', tab.href);
 				}
 			}
 			if (focus) {
@@ -177,7 +177,7 @@
 		});
 
 		window.addEventListener('popstate', function (event) {
-			var slug = event.state && event.state.gwipTab ? event.state.gwipTab : (new URLSearchParams(window.location.search).get('tab') || 'overview');
+			var slug = event.state && event.state.kwipTab ? event.state.kwipTab : (new URLSearchParams(window.location.search).get('tab') || 'overview');
 			activate(slug, '', false);
 		});
 
@@ -204,7 +204,7 @@
 			document.fonts.ready.then(place);
 		}
 		if (window.history && window.history.replaceState) {
-			window.history.replaceState({ gwipTab: active.getAttribute('data-tab') }, '', window.location.href);
+			window.history.replaceState({ kwipTab: active.getAttribute('data-tab') }, '', window.location.href);
 		}
 
 		runCountUps(document.getElementById(active.getAttribute('aria-controls')));
@@ -219,7 +219,7 @@
 
 		var number = document.getElementById('kwip-quality');
 		var range = document.getElementById('kwip-quality-range');
-		var presets = [].slice.call(form.querySelectorAll('input[name="gwip_preset"]'));
+		var presets = [].slice.call(form.querySelectorAll('input[name="kwip_preset"]'));
 		var custom = document.getElementById('kwip-custom-note');
 		var bar = document.getElementById('kwip-savebar');
 		var discard = document.getElementById('kwip-discard');

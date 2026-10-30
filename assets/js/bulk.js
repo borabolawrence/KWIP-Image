@@ -1,11 +1,11 @@
 (function ($) {
     'use strict';
 
-    if (typeof gwipBulk === 'undefined') {
+    if (typeof kwipBulk === 'undefined') {
         return;
     }
 
-    var cfg = gwipBulk;
+    var cfg = kwipBulk;
     var els = {
         start: $('#kwip-bulk-start'),
         resume: $('#kwip-bulk-resume'),
@@ -82,7 +82,7 @@
 
     function post(op, data) {
         return new Promise(function (resolve, reject) {
-            $.post(cfg.ajaxUrl, $.extend({ action: 'gwip_bulk', op: op, nonce: cfg.nonce }, data || {}))
+            $.post(cfg.ajaxUrl, $.extend({ action: 'kwip_bulk', op: op, nonce: cfg.nonce }, data || {}))
                 .done(function (response) {
                     if (response && response.success) {
                         resolve(response.data);
@@ -214,7 +214,7 @@
     els.start.on('click', async function () {
         var scope = $('input[name="kwip-bulk-scope"]:checked').val() === 'all' ? 'all' : 'new';
         if (scope === 'all') {
-            var ok = await window.gwipConfirm({
+            var ok = await window.kwipConfirm({
                 title: cfg.i18n.confirmAllTitle,
                 message: cfg.i18n.confirmAll,
                 confirmLabel: cfg.i18n.confirmAllButton
@@ -237,7 +237,7 @@
     });
 
     els.cancel.on('click', async function () {
-        var ok = await window.gwipConfirm({
+        var ok = await window.kwipConfirm({
             title: cfg.i18n.confirmCancelTitle,
             message: cfg.i18n.confirmCancel,
             confirmLabel: cfg.i18n.confirmCancelButton,

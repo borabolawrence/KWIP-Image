@@ -11,8 +11,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 final class KWIP_Settings {
 
-	public const OPTION = 'gwip_settings';
-	public const GROUP  = 'gwip_settings_group';
+	public const OPTION = 'kwip_settings';
+	public const GROUP  = 'kwip_settings_group';
 
 	public static function init(): void {
 		add_action( 'admin_init', array( __CLASS__, 'register' ) );
@@ -130,7 +130,7 @@ final class KWIP_Settings {
 		static $announced = false;
 		if ( ! $announced ) {
 			$announced = true;
-			add_settings_error( self::OPTION, 'gwip_saved', __( 'Settings saved.', 'kwip-image-plugin' ), 'success' );
+			add_settings_error( self::OPTION, 'kwip_saved', __( 'Settings saved.', 'kwip-image-plugin' ), 'success' );
 		}
 
 		$clean = array();
@@ -140,7 +140,7 @@ final class KWIP_Settings {
 			$quality = max( 1, min( 100, $quality ) );
 			add_settings_error(
 				self::OPTION,
-				'gwip_quality',
+				'kwip_quality',
 				sprintf( __( 'Quality must be between 1 and 100. It was set to %d.', 'kwip-image-plugin' ), $quality ),
 				'warning'
 			);
@@ -159,7 +159,7 @@ final class KWIP_Settings {
 			$formats = $defaults['formats'];
 			add_settings_error(
 				self::OPTION,
-				'gwip_formats',
+				'kwip_formats',
 				__( 'Select at least one image type. The defaults were restored.', 'kwip-image-plugin' ),
 				'warning'
 			);

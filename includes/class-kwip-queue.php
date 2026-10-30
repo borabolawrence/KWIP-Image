@@ -2,7 +2,7 @@
 /**
  * Background conversion queue (WP-Cron based).
  *
- * Queue entries are attachment meta: _gwip_queued holds the earliest time
+ * Queue entries are attachment meta: _kwip_queued holds the earliest time
  * (unix timestamp) the image may be processed. add_post_meta() with the
  * "unique" flag makes duplicate jobs impossible.
  *
@@ -15,13 +15,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 final class KWIP_Queue {
 
-	public const HOOK = 'gwip_process_queue';
+	public const HOOK = 'kwip_process_queue';
 
-	private const META_QUEUED   = '_gwip_queued';
-	private const META_ATTEMPTS = '_gwip_attempts';
+	private const META_QUEUED   = '_kwip_queued';
+	private const META_ATTEMPTS = '_kwip_attempts';
 	private const MAX_ATTEMPTS  = 3;
 	private const BATCH_SECONDS = 20;
-	private const RUN_LOCK      = 'gwip_queue_run_lock';
+	private const RUN_LOCK      = 'kwip_queue_run_lock';
 	private const RUN_LOCK_TTL  = 300;
 
 	public static function init(): void {
@@ -239,7 +239,7 @@ final class KWIP_Queue {
 		$result = KWIP_Converter::convert_attachment( $id );
 
 		if ( is_wp_error( $result ) ) {
-			if ( 'gwip_locked' === $result->get_error_code() ) {
+			if ( 'kwip_locked' === $result->get_error_code() ) {
 				update_post_meta( $id, self::META_QUEUED, time() + 60 );
 				return 'busy';
 			}

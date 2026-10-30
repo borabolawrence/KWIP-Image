@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 final class KWIP_Stats {
 
-	private const TRANSIENT = 'gwip_savings';
+	private const TRANSIENT = 'kwip_savings';
 
 	public static function flush(): void {
 		delete_transient( self::TRANSIENT );

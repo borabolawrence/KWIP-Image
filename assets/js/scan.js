@@ -1,11 +1,11 @@
 (function ($) {
     'use strict';
 
-    if (typeof gwipScan === 'undefined') {
+    if (typeof kwipScan === 'undefined') {
         return;
     }
 
-    var i18n = gwipScan.i18n;
+    var i18n = kwipScan.i18n;
     var $form = $('#kwip-scan-form');
     var $url = $('#kwip-scan-url');
     var $button = $('#kwip-scan-btn');
@@ -132,7 +132,7 @@
         if (s.pending > 0) {
             $wrap.append(
                 $('<p class="kwip-scan__cta"></p>').append(
-                    $('<a class="button button-primary"></a>').attr({ href: gwipScan.bulkUrl, 'data-kwip-goto': 'bulk' }).text(i18n.optimize)
+                    $('<a class="button button-primary"></a>').attr({ href: kwipScan.bulkUrl, 'data-kwip-goto': 'bulk' }).text(i18n.optimize)
                 )
             );
         }
@@ -159,12 +159,12 @@
         $result.attr('aria-busy', 'true');
 
         $.ajax({
-            url: gwipScan.ajaxUrl,
+            url: kwipScan.ajaxUrl,
             method: 'POST',
             timeout: 90000,
             data: {
-                action: 'gwip_scan',
-                nonce: gwipScan.nonce,
+                action: 'kwip_scan',
+                nonce: kwipScan.nonce,
                 url: $url.val()
             }
         })

@@ -11,14 +11,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 final class KWIP_Bulk {
 
-	private const NONCE_ACTION = 'gwip_bulk';
+	private const NONCE_ACTION = 'kwip_bulk';
 	private const CHUNK        = 200;
 
 	/** @var array<string, int>|null */
 	private static ?array $counts_cache = null;
 
 	public static function init(): void {
-		add_action( 'wp_ajax_gwip_bulk', array( __CLASS__, 'handle_ajax' ) );
+		add_action( 'wp_ajax_kwip_bulk', array( __CLASS__, 'handle_ajax' ) );
 	}
 
 	public static function enqueue(): void {
@@ -28,7 +28,7 @@ final class KWIP_Bulk {
 		wp_enqueue_script( 'kwip-bulk', KWIP_URL . 'assets/js/bulk.js', array( 'jquery', 'wp-a11y', 'kwip-modal' ), KWIP_VERSION, true );
 		wp_localize_script(
 			'kwip-bulk',
-			'gwipBulk',
+			'kwipBulk',
 			array(
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 				'nonce'   => wp_create_nonce( self::NONCE_ACTION ),
@@ -250,7 +250,7 @@ final class KWIP_Bulk {
 		$optimized_url = add_query_arg(
 			array(
 				'mode'        => 'list',
-				'gwip_filter' => 'optimized',
+				'kwip_filter' => 'optimized',
 			),
 			admin_url( 'upload.php' )
 		);

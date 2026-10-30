@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class KWIP_Converter {
 
 	/** Post meta key holding the conversion record. */
-	public const META_KEY = '_gwip_data';
+	public const META_KEY = '_kwip_data';
 
 	/** Seconds before a lock from a crashed run is considered stale. */
 	private const LOCK_TTL = 300;
@@ -43,12 +43,12 @@ final class KWIP_Converter {
 	public static function convert_attachment( int $attachment_id ): array|WP_Error {
 		$mime = get_post_mime_type( $attachment_id );
 		if ( ! in_array( $mime, array( 'image/jpeg', 'image/png' ), true ) ) {
-			return new WP_Error( 'gwip_not_supported', __( 'Only JPEG and PNG images can be converted.', 'kwip-image-plugin' ) );
+			return new WP_Error( 'kwip_not_supported', __( 'Only JPEG and PNG images can be converted.', 'kwip-image-plugin' ) );
 		}
 
 		$report = KWIP_Environment::get_report();
 		if ( ! $report['wp_webp'] ) {
-			return new WP_Error( 'gwip_no_webp', __( 'This server cannot write WebP images.', 'kwip-image-plugin' ) );
+			return new WP_Error( 'kwip_no_webp', __( 'This server cannot write WebP images.', 'kwip-image-plugin' ) );
 		}
 
 		$files = self::collect_files( $attachment_id );
@@ -57,7 +57,7 @@ final class KWIP_Converter {
 		}
 
 		if ( ! self::acquire_lock( $attachment_id ) ) {
-			return new WP_Error( 'gwip_locked', __( 'This image is already being processed.', 'kwip-image-plugin' ) );
+			return new WP_Error( 'kwip_locked', __( 'This image is already being processed.', 'kwip-image-plugin' ) );
 		}
 
 		try {
@@ -125,7 +125,7 @@ final class KWIP_Converter {
 	 */
 	public static function remove_attachment_webp( int $attachment_id ): int|WP_Error {
 		if ( ! self::acquire_lock( $attachment_id ) ) {
-			return new WP_Error( 'gwip_locked', __( 'This image is already being processed.', 'kwip-image-plugin' ) );
+			return new WP_Error( 'kwip_locked', __( 'This image is already being processed.', 'kwip-image-plugin' ) );
 		}
 		try {
 			return self::purge( $attachment_id );
@@ -167,7 +167,7 @@ final class KWIP_Converter {
 	private static function collect_files( int $attachment_id ): array|WP_Error {
 		$main = get_attached_file( $attachment_id );
 		if ( ! $main ) {
-			return new WP_Error( 'gwip_no_file', __( 'The attachment has no file.', 'kwip-image-plugin' ) );
+			return new WP_Error( 'kwip_no_file', __( 'The attachment has no file.', 'kwip-image-plugin' ) );
 		}
 
 		$files = array( wp_basename( $main ) => $main );
@@ -195,7 +195,7 @@ final class KWIP_Converter {
 	private static function convert_file( string $source, array $settings ): array {
 		$valid = KWIP_Files::validate_source( $source, $settings['formats'] );
 		if ( is_wp_error( $valid ) ) {
-			$skip_codes = array( 'gwip_format_disabled', 'gwip_unsupported', 'gwip_animated' );
+			$skip_codes = array( 'kwip_format_disabled', 'kwip_unsupported', 'kwip_animated' );
 			$status     = in_array( $valid->get_error_code(), $skip_codes, true ) ? 'skipped' : 'failed';
 			return self::result( $status, $valid->get_error_code(), $valid->get_error_message() );
 		}
@@ -204,7 +204,7 @@ final class KWIP_Converter {
 		$dest     = KWIP_Files::webp_path( $source );
 
 		if ( ! KWIP_Files::is_valid_destination( $dest ) ) {
-			return self::result( 'failed', 'gwip_publish_invalid', __( 'The output location is not allowed.', 'kwip-image-plugin' ), $original );
+			return self::result( 'failed', 'kwip_publish_invalid', __( 'The output location is not allowed.', 'kwip-image-plugin' ), $original );
 		}
 
 		$space = KWIP_Files::ensure_disk_space( dirname( $source ), $original );
@@ -266,7 +266,7 @@ final class KWIP_Converter {
 			$size = $editor->get_size();
 			return KWIP_Files::verify_webp( $temp, (int) $size['width'], (int) $size['height'] );
 		} catch ( Throwable $e ) {
-			return new WP_Error( 'gwip_exception', $e->getMessage() );
+			return new WP_Error( 'kwip_exception', $e->getMessage() );
 		}
 	}
 
@@ -316,7 +316,7 @@ final class KWIP_Converter {
 	}
 
 	private static function acquire_lock( int $attachment_id ): bool {
-		$key = 'gwip_lock_' . $attachment_id;
+		$key = 'kwip_lock_' . $attachment_id;
 
 		if ( add_option( $key, time(), '', false ) ) {
 			return true;
@@ -331,6 +331,6 @@ final class KWIP_Converter {
 	}
 
 	private static function release_lock( int $attachment_id ): void {
-		delete_option( 'gwip_lock_' . $attachment_id );
+		delete_option( 'kwip_lock_' . $attachment_id );
 	}
 }

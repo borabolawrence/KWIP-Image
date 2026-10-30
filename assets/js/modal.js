@@ -4,7 +4,7 @@
 	var counter = 0;
 
 	function labels() {
-		var i18n = (window.gwipDialog && window.gwipDialog.i18n) || {};
+		var i18n = (window.kwipDialog && window.kwipDialog.i18n) || {};
 		return {
 			cancel: i18n.cancel || 'Cancel',
 			confirm: i18n.confirm || 'Confirm'
@@ -28,7 +28,7 @@
 	 * options: title, message, confirmLabel, cancelLabel, tone ('danger' for destructive actions).
 	 * Returns a Promise that resolves to true (confirmed) or false (cancelled, Escape, backdrop click).
 	 */
-	window.gwipConfirm = function (options) {
+	window.kwipConfirm = function (options) {
 		options = options || {};
 		var text = labels();
 

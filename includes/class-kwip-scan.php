@@ -12,19 +12,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 final class KWIP_Scan {
 
-	private const NONCE_ACTION = 'gwip_scan';
+	private const NONCE_ACTION = 'kwip_scan';
 	private const MAX_TESTED   = 40;
 	private const TIME_BUDGET  = 20;
 
 	public static function init(): void {
-		add_action( 'wp_ajax_gwip_scan', array( __CLASS__, 'handle_ajax' ) );
+		add_action( 'wp_ajax_kwip_scan', array( __CLASS__, 'handle_ajax' ) );
 	}
 
 	public static function enqueue(): void {
 		wp_enqueue_script( 'kwip-scan', KWIP_URL . 'assets/js/scan.js', array( 'jquery', 'wp-a11y' ), KWIP_VERSION, true );
 		wp_localize_script(
 			'kwip-scan',
-			'gwipScan',
+			'kwipScan',
 			array(
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 				'nonce'   => wp_create_nonce( self::NONCE_ACTION ),
@@ -126,7 +126,7 @@ final class KWIP_Scan {
 
 		$host = strtolower( (string) wp_parse_url( $input, PHP_URL_HOST ) );
 		if ( '' === $host || $host !== $home_host ) {
-			return new WP_Error( 'gwip_scan_host', __( 'Only pages of this website can be checked.', 'kwip-image-plugin' ) );
+			return new WP_Error( 'kwip_scan_host', __( 'Only pages of this website can be checked.', 'kwip-image-plugin' ) );
 		}
 		return esc_url_raw( $input );
 	}
@@ -136,7 +136,7 @@ final class KWIP_Scan {
 	 */
 	private static function scan( string $page_url ): array|WP_Error {
 		$response = wp_remote_get(
-			add_query_arg( 'gwip_scan', (string) time(), $page_url ),
+			add_query_arg( 'kwip_scan', (string) time(), $page_url ),
 			array(
 				'timeout'             => 15,
 				'redirection'         => 3,
@@ -151,7 +151,7 @@ final class KWIP_Scan {
 
 		if ( is_wp_error( $response ) ) {
 			return new WP_Error(
-				'gwip_scan_fetch',
+				'kwip_scan_fetch',
 				sprintf(
 					__( 'The page could not be loaded (%s).', 'kwip-image-plugin' ),
 					$response->get_error_message()
@@ -162,7 +162,7 @@ final class KWIP_Scan {
 		$code = (int) wp_remote_retrieve_response_code( $response );
 		if ( 200 !== $code ) {
 			return new WP_Error(
-				'gwip_scan_status',
+				'kwip_scan_status',
 				sprintf(
 					__( 'The page returned HTTP %d, so it could not be checked.', 'kwip-image-plugin' ),
 					$code
@@ -172,7 +172,7 @@ final class KWIP_Scan {
 
 		$html = (string) wp_remote_retrieve_body( $response );
 		if ( '' === trim( $html ) ) {
-			return new WP_Error( 'gwip_scan_empty', __( 'The page was empty.', 'kwip-image-plugin' ) );
+			return new WP_Error( 'kwip_scan_empty', __( 'The page was empty.', 'kwip-image-plugin' ) );
 		}
 
 		$urls = self::extract_urls( $html, $page_url );
@@ -193,7 +193,7 @@ final class KWIP_Scan {
 	 */
 	private static function extract_urls( string $html, string $base ): array|WP_Error {
 		if ( ! class_exists( 'DOMDocument' ) ) {
-			return new WP_Error( 'gwip_scan_dom', __( 'The page check needs the PHP "dom" extension, which is not available on this server.', 'kwip-image-plugin' ) );
+			return new WP_Error( 'kwip_scan_dom', __( 'The page check needs the PHP "dom" extension, which is not available on this server.', 'kwip-image-plugin' ) );
 		}
 
 		$previous = libxml_use_internal_errors( true );
@@ -365,7 +365,7 @@ final class KWIP_Scan {
 			}
 			++$tested;
 
-			$bust = add_query_arg( 'gwip_scan', (string) time(), $url );
+			$bust = add_query_arg( 'kwip_scan', (string) time(), $url );
 			$with = wp_remote_head( $bust, $request + array( 'headers' => array( 'Accept' => 'image/webp,image/*;q=0.8,*/*;q=0.5' ) ) );
 
 			if ( is_wp_error( $with ) ) {

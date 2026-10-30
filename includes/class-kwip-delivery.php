@@ -22,7 +22,7 @@ final class KWIP_Delivery {
 	public static function on_settings_saved(): void {
 		$result = self::apply();
 		if ( is_wp_error( $result ) ) {
-			add_settings_error( KWIP_Settings::OPTION, 'gwip_delivery', $result->get_error_message(), 'warning' );
+			add_settings_error( KWIP_Settings::OPTION, 'kwip_delivery', $result->get_error_message(), 'warning' );
 		}
 	}
 
@@ -53,14 +53,14 @@ final class KWIP_Delivery {
 	/** Nginx cannot be configured from a plugin; shown for manual setup. Currently untested. so please use it accordingly*/
 	public static function nginx_rules(): string {
 		return "# In the http { } block:\n"
-			. "map \$http_accept \$gwip_webp_suffix {\n"
+			. "map \$http_accept \$kwip_webp_suffix {\n"
 			. "    default \"\";\n"
 			. "    \"~*image/webp\" \".webp\";\n"
 			. "}\n\n"
 			. "# In your server { } block (merge with any existing image rules):\n"
 			. "location ~* \\.(?:jpe?g|png)\$ {\n"
 			. "    add_header Vary Accept;\n"
-			. "    try_files \$uri\$gwip_webp_suffix \$uri =404;\n"
+			. "    try_files \$uri\$kwip_webp_suffix \$uri =404;\n"
 			. "}\n";
 	}
 
@@ -72,18 +72,18 @@ final class KWIP_Delivery {
 
 	private static function write_rules(): true|WP_Error {
 		if ( ! KWIP_Platform::supports_server_rules() ) {
-			return new WP_Error( 'gwip_server', __( 'Automatic WebP delivery works on Apache and LiteSpeed. This server looks different, so the rules must be added manually. See Server status for the rules.', 'kwip-image-plugin' ) );
+			return new WP_Error( 'kwip_server', __( 'Automatic WebP delivery works on Apache and LiteSpeed. This server looks different, so the rules must be added manually. See Server status for the rules.', 'kwip-image-plugin' ) );
 		}
 
 		$file   = self::htaccess_path();
 		$exists = file_exists( $file );
 
 		if ( ( $exists && ! wp_is_writable( $file ) ) || ( ! $exists && ! wp_is_writable( dirname( $file ) ) ) ) {
-			return new WP_Error( 'gwip_unwritable', __( 'The .htaccess file is not writable, so WebP delivery could not be switched on. See Server status for the rules to add manually.', 'kwip-image-plugin' ) );
+			return new WP_Error( 'kwip_unwritable', __( 'The .htaccess file is not writable, so WebP delivery could not be switched on. See Server status for the rules to add manually.', 'kwip-image-plugin' ) );
 		}
 
 		if ( true !== insert_with_markers( $file, self::MARKER, self::rules() ) ) {
-			return new WP_Error( 'gwip_write_failed', __( 'The .htaccess file could not be updated. See Server status for the rules to add manually.', 'kwip-image-plugin' ) );
+			return new WP_Error( 'kwip_write_failed', __( 'The .htaccess file could not be updated. See Server status for the rules to add manually.', 'kwip-image-plugin' ) );
 		}
 		return true;
 	}
@@ -94,7 +94,7 @@ final class KWIP_Delivery {
 			return true;
 		}
 		if ( ! wp_is_writable( $file ) ) {
-			return new WP_Error( 'gwip_unwritable', __( 'The .htaccess file is not writable, so the WebP rules could not be removed. Delete the block between "BEGIN KWIP Image" and "END KWIP Image" by hand.', 'kwip-image-plugin' ) );
+			return new WP_Error( 'kwip_unwritable', __( 'The .htaccess file is not writable, so the WebP rules could not be removed. Delete the block between "BEGIN KWIP Image" and "END KWIP Image" by hand.', 'kwip-image-plugin' ) );
 		}
 		insert_with_markers( $file, self::MARKER, array() );
 		return true;
@@ -159,7 +159,7 @@ final class KWIP_Delivery {
 			'redirection' => 3,
 			'sslverify'   => apply_filters( 'https_local_ssl_verify', false ),
 		);
-		$url  = add_query_arg( 'gwip_test', (string) time(), $url );
+		$url  = add_query_arg( 'kwip_test', (string) time(), $url );
 
 		$with    = wp_remote_head( $url, $args + array( 'headers' => array( 'Accept' => 'image/webp,image/*;q=0.8,*/*;q=0.5' ) ) );
 		$without = wp_remote_head( $url, $args + array( 'headers' => array( 'Accept' => 'image/png,image/jpeg;q=0.9,*/*;q=0.5' ) ) );
@@ -247,7 +247,7 @@ final class KWIP_Delivery {
 	 */
 	private static function test_page(): array {
 		$response = wp_remote_get(
-			add_query_arg( 'gwip_test', (string) time(), home_url( '/' ) ),
+			add_query_arg( 'kwip_test', (string) time(), home_url( '/' ) ),
 			array(
 				'timeout'             => 15,
 				'redirection'         => 3,
@@ -261,7 +261,7 @@ final class KWIP_Delivery {
 			return array(
 				'type'    => 'error',
 				'message' => sprintf(
-					__( 'The home page could not be loaded (%s).', 'guanzon-webp-image-plugin' ),
+					__( 'The home page could not be loaded (%s).', 'kwip-image-plugin' ),
 					$response->get_error_message()
 				),
 			);
@@ -279,7 +279,7 @@ final class KWIP_Delivery {
 		}
 
 		$html    = (string) wp_remote_retrieve_body( $response );
-		$wrapped = (int) preg_match_all( '/<picture\b[^>]*class=["\'][^"\']*gwip-picture/i', $html );
+		$wrapped = (int) preg_match_all( '/<picture\b[^>]*class=["\'][^"\']*kwip-picture/i', $html );
 		$images  = (int) preg_match_all( '/<img\b/i', $html );
 
 		if ( $wrapped > 0 ) {
@@ -356,7 +356,7 @@ final class KWIP_Delivery {
 	}
 
 	private static function flash_key(): string {
-		return 'gwip_flash_' . get_current_user_id();
+		return 'kwip_flash_' . get_current_user_id();
 	}
 
 

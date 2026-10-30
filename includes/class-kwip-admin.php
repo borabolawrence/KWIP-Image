@@ -18,9 +18,9 @@ final class KWIP_Admin {
 	public static function init(): void {
 		add_action( 'admin_menu', array( __CLASS__, 'register_menu' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
-		add_action( 'admin_post_gwip_process_now', array( __CLASS__, 'handle_process_now' ) );
-		add_action( 'admin_post_gwip_delivery_apply', array( __CLASS__, 'handle_delivery_apply' ) );
-		add_action( 'admin_post_gwip_delivery_test', array( __CLASS__, 'handle_delivery_test' ) );
+		add_action( 'admin_post_kwip_process_now', array( __CLASS__, 'handle_process_now' ) );
+		add_action( 'admin_post_kwip_delivery_apply', array( __CLASS__, 'handle_delivery_apply' ) );
+		add_action( 'admin_post_kwip_delivery_test', array( __CLASS__, 'handle_delivery_test' ) );
 	}
 
 	public static function register_menu(): void {
@@ -53,7 +53,7 @@ final class KWIP_Admin {
 		wp_register_script( 'kwip-modal', KWIP_URL . 'assets/js/modal.js', array(), KWIP_VERSION, true );
 		wp_localize_script(
 			'kwip-modal',
-			'gwipDialog',
+			'kwipDialog',
 			array(
 				'i18n' => array(
 					'cancel'  => __( 'Cancel', 'kwip-image-plugin' ),
@@ -105,7 +105,16 @@ final class KWIP_Admin {
 		?>
 		<div class="wrap kwip-wrap">
 			<h1><?php esc_html_e( 'KWIP Image', 'kwip-image-plugin' ); ?></h1>
-			<p class="kwip-tagline"><?php esc_html_e( 'Smaller images. A faster website.', 'kwip-image-plugin' ); ?></p>
+			<p class="kwip-tagline">
+				<?php esc_html_e( 'Smaller images. A faster website.', 'kwip-image-plugin' ); ?>
+			</p>
+
+			<p class="kwip-tagline kwip-credit">
+				<?php esc_html_e( 'Developed and maintained by', 'kwip-image-plugin' ); ?>
+				<a href="https://github.com/borabolawrence" target="_blank" rel="noopener noreferrer">Kiyouh</a>
+				<?php esc_html_e( 'with', 'kwip-image-plugin' ); ?>
+				<a href="https://github.com/borabolawrence/KWIP-Image" target="_blank" rel="noopener noreferrer">KWIP Community</a>
+			</p>
 
 			<div class="kwip-tabs" role="tablist" aria-label="<?php esc_attr_e( 'KWIP Image sections', 'kwip-image-plugin' ); ?>">
 				<?php foreach ( self::tabs() as $slug => $label ) : ?>
@@ -322,7 +331,7 @@ final class KWIP_Admin {
 				<span class="kwip-tile__label"><?php esc_html_e( 'Visitors see optimized images', 'kwip-image-plugin' ); ?></span>
 				<?php if ( KWIP_Delivery::is_delivering() ) : ?>
 					<span class="kwip-chip kwip-chip--ok"><span class="dashicons dashicons-yes-alt" aria-hidden="true"></span><?php esc_html_e( 'On', 'kwip-image-plugin' ); ?></span>
-					<span class="gwip-tile__sub"><?php echo esc_html( 'page' === $delivery ? __( 'Delivered through the page, so it works with any server, CDN or cache.', 'kwip-image-plugin' ) : __( 'Modern browsers get the lighter images automatically.', 'kwip-image-plugin' ) ); ?></span>
+					<span class="kwip-tile__sub"><?php echo esc_html( 'page' === $delivery ? __( 'Delivered through the page, so it works with any server, CDN or cache.', 'kwip-image-plugin' ) : __( 'Modern browsers get the lighter images automatically.', 'kwip-image-plugin' ) ); ?></span>
 				<?php else : ?>
 					<span class="kwip-chip kwip-chip--warn"><span class="dashicons dashicons-warning" aria-hidden="true"></span><?php echo esc_html( in_array( $delivery, array( 'missing', 'manual' ), true ) ? __( 'Needs attention', 'kwip-image-plugin' ) : __( 'Off', 'kwip-image-plugin' ) ); ?></span>
 					<span class="kwip-tile__sub"><?php esc_html_e( 'Visitors currently receive your original images.', 'kwip-image-plugin' ); ?></span>
@@ -386,7 +395,7 @@ final class KWIP_Admin {
 				<div class="kwip-presets" role="radiogroup" aria-label="<?php esc_attr_e( 'Image quality', 'kwip-image-plugin' ); ?>">
 					<?php foreach ( $presets as $key => $preset ) : ?>
 						<label class="kwip-preset">
-							<input type="radio" name="gwip_preset" value="<?php echo esc_attr( (string) $preset['quality'] ); ?>" <?php checked( $key === $current ); ?>>
+							<input type="radio" name="kwip_preset" value="<?php echo esc_attr( (string) $preset['quality'] ); ?>" <?php checked( $key === $current ); ?>>
 							<span class="kwip-preset__body">
 								<span class="dashicons dashicons-<?php echo esc_attr( $preset['icon'] ); ?>" aria-hidden="true"></span>
 								<strong><?php echo esc_html( $preset['label'] ); ?></strong>
@@ -424,7 +433,7 @@ final class KWIP_Admin {
 					</span>
 				</label>
 
-				<p class="description gwip-platform">
+				<p class="description kwip-platform">
 					<?php
 					if ( 'none' === KWIP_Delivery::active_method() ) {
 						esc_html_e( 'Visitors currently receive your original images.', 'kwip-image-plugin' );
@@ -472,10 +481,10 @@ final class KWIP_Admin {
 						),
 					);
 					?>
-					<fieldset class="gwip-field">
+					<fieldset class="kwip-field">
 						<legend><strong><?php esc_html_e( 'How optimized images reach visitors', 'kwip-image-plugin' ); ?></strong></legend>
 						<p class="description"><?php esc_html_e( 'Most sites should leave this on Automatic.', 'kwip-image-plugin' ); ?></p>
-						<div class="gwip-presets">
+						<div class="kwip-presets">
 							<?php foreach ( $methods as $key => $method ) : ?>
 								<label class="kwip-preset">
 									<input type="radio" name="<?php echo esc_attr( $name ); ?>[method]" value="<?php echo esc_attr( $key ); ?>"
@@ -666,7 +675,7 @@ final class KWIP_Admin {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You do not have permission to do that.', 'kwip-image-plugin' ), 403 );
 		}
-		check_admin_referer( 'gwip_process_now' );
+		check_admin_referer( 'kwip_process_now' );
 
 		$result = KWIP_Queue::process( 15 );
 
@@ -675,8 +684,8 @@ final class KWIP_Admin {
 				array(
 					'page'           => self::PAGE,
 					'tab'            => 'status',
-					'gwip_processed' => $result['processed'],
-					'gwip_remaining' => $result['remaining'],
+					'kwip_processed' => $result['processed'],
+					'kwip_remaining' => $result['remaining'],
 				),
 				admin_url( 'admin.php' )
 			)
@@ -685,9 +694,9 @@ final class KWIP_Admin {
 	}
 
 	private static function render_queue_card(): void {
-		if ( isset( $_GET['gwip_processed'], $_GET['gwip_remaining'] ) ) { 
-			$done = absint( wp_unslash( $_GET['gwip_processed'] ) ); 
-			$left = absint( wp_unslash( $_GET['gwip_remaining'] ) ); 
+		if ( isset( $_GET['kwip_processed'], $_GET['kwip_remaining'] ) ) { 
+			$done = absint( wp_unslash( $_GET['kwip_processed'] ) ); 
+			$left = absint( wp_unslash( $_GET['kwip_remaining'] ) ); 
 			printf(
 				'<div class="notice notice-info inline"><p>%s</p></div>',
 				esc_html(
@@ -723,8 +732,8 @@ final class KWIP_Admin {
 				<p class="description"><?php esc_html_e( 'Scheduled tasks are switched off on this site, so waiting images are only processed when you use the button below or when your host runs scheduled tasks.', 'kwip-image-plugin' ); ?></p>
 			<?php endif; ?>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-				<input type="hidden" name="action" value="gwip_process_now">
-				<?php wp_nonce_field( 'gwip_process_now' ); ?>
+				<input type="hidden" name="action" value="kwip_process_now">
+				<?php wp_nonce_field( 'kwip_process_now' ); ?>
 				<?php submit_button( __( 'Optimize waiting images now', 'kwip-image-plugin' ), 'secondary', 'submit', false, $pending > 0 ? array() : array( 'disabled' => 'disabled' ) ); ?>
 			</form>
 		</section>
@@ -735,7 +744,7 @@ final class KWIP_Admin {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You do not have permission to do that.', 'kwip-image-plugin' ), 403 );
 		}
-		check_admin_referer( 'gwip_delivery_apply', 'gwip_apply_nonce' );
+		check_admin_referer( 'kwip_delivery_apply', 'kwip_apply_nonce' );
 
 		$result = KWIP_Delivery::apply();
 		KWIP_Delivery::flash(
@@ -758,7 +767,7 @@ final class KWIP_Admin {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You do not have permission to do that.', 'kwip-image-plugin' ), 403 );
 		}
-		check_admin_referer( 'gwip_delivery_test', 'gwip_test_nonce' );
+		check_admin_referer( 'kwip_delivery_test', 'kwip_test_nonce' );
 
 		KWIP_Delivery::flash( KWIP_Delivery::test() );
 
@@ -803,13 +812,13 @@ final class KWIP_Admin {
 
 			<div class="kwip-actions">
 				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-					<input type="hidden" name="action" value="gwip_delivery_apply">
-					<?php wp_nonce_field( 'gwip_delivery_apply', 'gwip_apply_nonce' ); ?>
+					<input type="hidden" name="action" value="kwip_delivery_apply">
+					<?php wp_nonce_field( 'kwip_delivery_apply', 'kwip_apply_nonce' ); ?>
 					<?php submit_button( __( 'Fix automatically', 'kwip-image-plugin' ), 'secondary', 'kwip-apply', false ); ?>
 				</form>
 				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-					<input type="hidden" name="action" value="gwip_delivery_test">
-					<?php wp_nonce_field( 'gwip_delivery_test', 'gwip_test_nonce' ); ?>
+					<input type="hidden" name="action" value="kwip_delivery_test">
+					<?php wp_nonce_field( 'kwip_delivery_test', 'kwip_test_nonce' ); ?>
 					<?php submit_button( __( 'Check that it works', 'kwip-image-plugin' ), 'secondary', 'kwip-test', false, 'off' === $state['key'] ? array( 'disabled' => 'disabled' ) : array() ); ?>
 				</form>
 			</div>
