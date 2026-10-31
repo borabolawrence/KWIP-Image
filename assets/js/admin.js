@@ -56,6 +56,8 @@
 		}
 	}
 
+	window.kwipRunCountUps = runCountUps;
+
 
 	function initTabs() {
 		var root = document.querySelector('.kwip-wrap');
