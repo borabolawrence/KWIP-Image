@@ -68,6 +68,7 @@ final class KWIP_Admin {
 		return array(
 			'overview' => __( 'Overview', 'kwip-image-plugin' ),
 			'bulk'     => __( 'Optimize images', 'kwip-image-plugin' ),
+			'report'   => __( 'Page report', 'kwip-image-plugin' ),
 			'settings' => __( 'Settings', 'kwip-image-plugin' ),
 			'status'   => __( 'Health check', 'kwip-image-plugin' ),
 		);
@@ -99,6 +100,7 @@ final class KWIP_Admin {
 		$icons   = array(
 			'overview' => 'dashboard',
 			'bulk'     => 'images-alt2',
+			'report'   => 'chart-bar',
 			'settings' => 'admin-generic',
 			'status'   => 'heart',
 		);
@@ -152,6 +154,7 @@ final class KWIP_Admin {
 					match ( $slug ) {
 						'overview' => self::render_overview( $report ),
 						'bulk'     => KWIP_Bulk::render( $report ),
+						'report'   => KWIP_Scan::render_card(),
 						'status'   => self::render_status( $report ),
 						default    => self::render_settings( $report ),
 					};
@@ -650,7 +653,6 @@ final class KWIP_Admin {
 		<?php
 		self::render_delivery_card();
 		self::render_queue_card();
-		KWIP_Scan::render_card();
 		?>
 		<details class="kwip-card kwip-advanced">
 			<summary><?php esc_html_e( 'Technical details', 'kwip-image-plugin' ); ?></summary>

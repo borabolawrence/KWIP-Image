@@ -294,7 +294,7 @@ final class KWIP_Delivery {
 		if ( 0 === $images ) {
 			return array(
 				'type'    => 'info',
-				'message' => __( 'No images were found on your home page, so there was nothing to check. Use "Check a page" on a page that has images.', 'kwip-image-plugin' ),
+				'message' => __( 'No images were found on your home page, so there was nothing to check. Use the Page report tab on a page that has images.', 'kwip-image-plugin' ),
 			);
 		}
 		return array(

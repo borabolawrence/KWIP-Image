@@ -377,7 +377,8 @@
 	display: flex;
 	align-items: baseline;
 	justify-content: center;
-	padding-top: 48px;
+	padding-top: 53px;
+	font-size: 2vw;
 	font-weight: 600;
 }
 
