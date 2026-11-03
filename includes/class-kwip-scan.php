@@ -32,7 +32,7 @@ final class KWIP_Scan {
 			array(
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 				'nonce'   => wp_create_nonce( self::NONCE_ACTION ),
-				'i18n'    => self::strings(),
+				'i18n'    => self::strings() + self::site_strings(),
 			)
 		);
 	}
@@ -103,24 +103,252 @@ final class KWIP_Scan {
 	}
 
 	public static function render_card(): void {
+		$routes = self::suggested_routes();
 		?>
 		<section class="kwip-card kwip-scan">
-			<h2><?php esc_html_e( 'Page image report', 'kwip-image-plugin' ); ?></h2>
-			<p class="kwip-lead"><?php esc_html_e( 'Enter any page of your site to get an image report: how much the images weigh, which are delivered as WebP, which are larger than they need to be, and what to fix first. Scan again after fixing to see the improvement.', 'kwip-image-plugin' ); ?></p>
+			<h2><?php esc_html_e( 'Page report', 'kwip-image-plugin' ); ?></h2>
+			<p class="kwip-lead"><?php esc_html_e( 'Scan one page or several. You get a score for every page, plus a list of your images showing where each one is rendered, whether visitors get the optimized version there, and what to fix first.', 'kwip-image-plugin' ); ?></p>
 
 			<form id="kwip-scan-form" class="kwip-scan__form" novalidate>
-				<label class="screen-reader-text" for="kwip-scan-url"><?php esc_html_e( 'Page address', 'kwip-image-plugin' ); ?></label>
-				<input type="text" id="kwip-scan-url" class="regular-text" value="<?php echo esc_attr( home_url( '/' ) ); ?>" autocomplete="off">
-				<button type="submit" class="button button-primary" id="kwip-scan-btn"><?php esc_html_e( 'Scan page', 'kwip-image-plugin' ); ?></button>
-				<span class="spinner"></span>
+				<fieldset class="kwip-routes" id="kwip-routes">
+					<legend><strong><?php esc_html_e( 'Pages to scan', 'kwip-image-plugin' ); ?></strong></legend>
+					<p class="description"><?php esc_html_e( 'The home page and your most important pages are ticked. Scanning more pages shows more of where each image is used.', 'kwip-image-plugin' ); ?></p>
+					<div class="kwip-routes__list">
+						<?php foreach ( $routes as $route ) : ?>
+							<label class="kwip-route">
+								<input type="checkbox" value="<?php echo esc_attr( $route['url'] ); ?>" <?php checked( $route['checked'] ); ?>>
+								<span class="kwip-route__body">
+									<strong><?php echo esc_html( $route['label'] ); ?></strong>
+									<small><?php echo esc_html( $route['path'] ); ?></small>
+								</span>
+							</label>
+						<?php endforeach; ?>
+					</div>
+					<div class="kwip-routes__add">
+						<label class="screen-reader-text" for="kwip-scan-url"><?php esc_html_e( 'Add another page', 'kwip-image-plugin' ); ?></label>
+						<input type="text" id="kwip-scan-url" class="regular-text" placeholder="<?php esc_attr_e( 'Add another page, for example /about/', 'kwip-image-plugin' ); ?>" autocomplete="off">
+						<button type="button" class="button" id="kwip-add-route"><?php esc_html_e( 'Add', 'kwip-image-plugin' ); ?></button>
+					</div>
+				</fieldset>
+
+				<div class="kwip-actions">
+					<button type="submit" class="button button-primary" id="kwip-scan-btn"><?php esc_html_e( 'Scan selected pages', 'kwip-image-plugin' ); ?></button>
+					<button type="button" class="button" id="kwip-scan-stop" hidden><?php esc_html_e( 'Stop', 'kwip-image-plugin' ); ?></button>
+					<span class="spinner"></span>
+				</div>
 			</form>
-			<p class="description"><?php esc_html_e( 'Try your home page, then a page built with Flatsome UX Builder and a WooCommerce product page.', 'kwip-image-plugin' ); ?></p>
 
 			<p id="kwip-scan-message" role="alert"></p>
 			<div id="kwip-scan-result" aria-live="polite"></div>
 		</section>
 		<?php
 	}
+
+
+	/* ---------------------------------------------------------------------
+	 * Where an image sits, page titles, suggested pages
+	 * ------------------------------------------------------------------ */
+
+	/**
+	 * Where an element sits on the page: the nearest landmark (header, menu,
+	 * main content, sidebar, footer) and a short hint such as "#hero".
+	 *
+	 * @return array{0:string,1:string}
+	 */
+	private static function locate( DOMElement $el ): array {
+		$place = 'other';
+		$hint  = '';
+		$depth = 0;
+
+		for ( $node = $el->parentNode; $node instanceof DOMElement && $depth < 12; $node = $node->parentNode, ++$depth ) {
+			$tag  = strtolower( $node->nodeName );
+			$role = strtolower( $node->getAttribute( 'role' ) );
+
+			if ( '' === $hint ) {
+				$id = trim( $node->getAttribute( 'id' ) );
+				if ( '' !== $id && ! preg_match( '/^(page|wrapper|content|main|header|footer|body|primary|site)$/i', $id ) ) {
+					$hint = '#' . $id;
+				} elseif ( in_array( $tag, array( 'section', 'div', 'article', 'aside' ), true ) ) {
+					foreach ( preg_split( '/\s+/', trim( $node->getAttribute( 'class' ) ) ) ?: array() as $class ) {
+						if ( '' !== $class && ! preg_match( '/^(row|col|cols|column|columns|container|wrap|wrapper|inner|content|section|section-content|large-\d+|medium-\d+|small-\d+|text-.*|align.*|is-.*|has-.*|wp-.*)$/i', $class ) ) {
+							$hint = '.' . $class;
+							break;
+						}
+					}
+				}
+			}
+
+			if ( 'header' === $tag || 'banner' === $role ) {
+				$place = 'header';
+				break;
+			}
+			if ( 'footer' === $tag || 'contentinfo' === $role ) {
+				$place = 'footer';
+				break;
+			}
+			if ( 'nav' === $tag || 'navigation' === $role ) {
+				$place = 'nav';
+				break;
+			}
+			if ( 'aside' === $tag || 'complementary' === $role ) {
+				$place = 'aside';
+				break;
+			}
+			if ( 'main' === $tag || 'main' === $role ) {
+				$place = 'main';
+				break;
+			}
+		}
+
+		return array( $place, substr( $hint, 0, 40 ) );
+	}
+
+	private static function page_title( string $html ): string {
+		if ( preg_match( '#<title[^>]*>(.*?)</title>#is', $html, $m ) ) {
+			return trim( html_entity_decode( wp_strip_all_tags( $m[1] ), ENT_QUOTES ) );
+		}
+		return '';
+	}
+
+	/** Path (and query) of a page address, for display. */
+	private static function route_of( string $url ): string {
+		$path  = (string) wp_parse_url( $url, PHP_URL_PATH );
+		$query = (string) wp_parse_url( $url, PHP_URL_QUERY );
+		return ( '' === $path ? '/' : $path ) . ( '' !== $query ? '?' . $query : '' );
+	}
+
+	/**
+	 * Pages offered in the picker: home, the posts page, the shop and a few
+	 * products when WooCommerce is active, and recently changed pages and posts.
+	 * The first six are ticked.
+	 *
+	 * @return array<int, array{url:string,label:string,path:string,checked:bool}>
+	 */
+	private static function suggested_routes(): array {
+		$cached = get_transient( 'kwip_routes' );
+		if ( is_array( $cached ) ) {
+			return $cached;
+		}
+
+		$routes = array();
+		$add    = static function ( string $url, string $label ) use ( &$routes ): void {
+			if ( '' === $url || count( $routes ) >= 12 ) {
+				return;
+			}
+			foreach ( $routes as $route ) {
+				if ( untrailingslashit( $route['url'] ) === untrailingslashit( $url ) ) {
+					return;
+				}
+			}
+			$routes[] = array(
+				'url'     => $url,
+				'label'   => '' !== $label ? $label : __( '(no title)', 'kwip-image-plugin' ),
+				'path'    => self::route_of( $url ),
+				'checked' => false,
+			);
+		};
+		$title  = static function ( int $post_id ): string {
+			return trim( html_entity_decode( wp_strip_all_tags( get_the_title( $post_id ) ), ENT_QUOTES ) );
+		};
+
+		$add( home_url( '/' ), __( 'Home page', 'kwip-image-plugin' ) );
+
+		$front = (int) get_option( 'page_on_front' );
+		$blog  = (int) get_option( 'page_for_posts' );
+		if ( $blog > 0 ) {
+			$add( (string) get_permalink( $blog ), $title( $blog ) );
+		}
+
+		if ( function_exists( 'wc_get_page_permalink' ) ) {
+			$add( (string) wc_get_page_permalink( 'shop' ), __( 'Shop', 'kwip-image-plugin' ) );
+			$products = get_posts(
+				array(
+					'post_type'   => 'product',
+					'post_status' => 'publish',
+					'numberposts' => 2,
+				)
+			);
+			foreach ( $products as $product ) {
+				$add( (string) get_permalink( $product ), $title( (int) $product->ID ) );
+			}
+		}
+
+		$pages = get_posts(
+			array(
+				'post_type'   => 'page',
+				'post_status' => 'publish',
+				'numberposts' => 6,
+				'orderby'     => 'modified',
+				'order'       => 'DESC',
+				'exclude'     => array_filter( array( $front, $blog ) ),
+			)
+		);
+		foreach ( $pages as $page ) {
+			$add( (string) get_permalink( $page ), $title( (int) $page->ID ) );
+		}
+
+		$posts = get_posts(
+			array(
+				'post_type'   => 'post',
+				'post_status' => 'publish',
+				'numberposts' => 2,
+			)
+		);
+		foreach ( $posts as $post_item ) {
+			$add( (string) get_permalink( $post_item ), $title( (int) $post_item->ID ) );
+		}
+
+		foreach ( $routes as $index => $route ) {
+			$routes[ $index ]['checked'] = $index < 6;
+		}
+
+		set_transient( 'kwip_routes', $routes, 5 * MINUTE_IN_SECONDS );
+		return $routes;
+	}
+
+
+	/** @return array<string, string> */
+	private static function site_strings(): array {
+		return array(
+			'scanSelected'    => __( 'Scan selected pages', 'kwip-image-plugin' ),
+			'noPages'         => __( 'Tick at least one page to scan.', 'kwip-image-plugin' ),
+			'progress'        => __( 'Scanning page %1$s of %2$s: %3$s', 'kwip-image-plugin' ),
+			'stopped'         => __( 'Stopped. Showing the %s pages scanned so far.', 'kwip-image-plugin' ),
+			'pageFailed'      => __( 'Could not scan %1$s: %2$s', 'kwip-image-plugin' ),
+			'sitePages'       => __( 'Pages scanned', 'kwip-image-plugin' ),
+			'siteScore'       => __( 'Average score', 'kwip-image-plugin' ),
+			'siteUnopt'       => __( 'Images to optimize', 'kwip-image-plugin' ),
+			'siteWeight'      => __( 'Image weight, all pages', 'kwip-image-plugin' ),
+			'pagesTitle'      => __( 'Pages', 'kwip-image-plugin' ),
+			'colScore'        => __( 'Score', 'kwip-image-plugin' ),
+			'colWeight'       => __( 'Image weight', 'kwip-image-plugin' ),
+			'colProblems'     => __( 'Need attention', 'kwip-image-plugin' ),
+			'viewDetails'     => __( 'View report', 'kwip-image-plugin' ),
+			'hideDetails'     => __( 'Hide report', 'kwip-image-plugin' ),
+			'noImagesShort'   => __( 'No images', 'kwip-image-plugin' ),
+			'usageTitle'      => __( 'Where your images are used', 'kwip-image-plugin' ),
+			'usageHint'       => __( 'Every image, the pages that show it, and whether visitors get the optimized version there.', 'kwip-image-plugin' ),
+			'usageAttention'  => __( 'Needs attention', 'kwip-image-plugin' ),
+			'usageOptimized'  => __( 'Optimized', 'kwip-image-plugin' ),
+			'usageOther'      => __( 'Cannot be optimized', 'kwip-image-plugin' ),
+			'usageAll'        => __( 'All', 'kwip-image-plugin' ),
+			'imageNumber'     => __( 'Image %s', 'kwip-image-plugin' ),
+			'onOnePage'       => __( 'On 1 page', 'kwip-image-plugin' ),
+			'onManyPages'     => __( 'On %s pages', 'kwip-image-plugin' ),
+			'problemOn'       => __( 'not optimized on %1$s of %2$s', 'kwip-image-plugin' ),
+			'moreRoutes'      => __( 'Show %s more', 'kwip-image-plugin' ),
+			'fewerRoutes'     => __( 'Show fewer', 'kwip-image-plugin' ),
+			'renderedOn'      => __( 'Rendered on', 'kwip-image-plugin' ),
+			'exportUsage'     => __( 'Download image usage (CSV)', 'kwip-image-plugin' ),
+			'placeHeader'     => __( 'Header', 'kwip-image-plugin' ),
+			'placeNav'        => __( 'Menu', 'kwip-image-plugin' ),
+			'placeMain'       => __( 'Main content', 'kwip-image-plugin' ),
+			'placeFooter'     => __( 'Footer', 'kwip-image-plugin' ),
+			'placeAside'      => __( 'Sidebar', 'kwip-image-plugin' ),
+			'placeOther'      => __( 'Somewhere on the page', 'kwip-image-plugin' ),
+			'detailsHeading'  => __( 'Detailed report', 'kwip-image-plugin' ),
+		);
+	}	
 
 
 	public static function handle_ajax(): void {
@@ -242,9 +470,11 @@ final class KWIP_Scan {
 			return $images;
 		}
 
-		$report         = self::analyze( $images );
-		$report['page'] = $page_url;
-		$report['time'] = time();
+		$report          = self::analyze( $images );
+		$report['page']  = $page_url;
+		$report['time']  = time();
+		$report['title'] = self::page_title( $html );
+		$report['route'] = self::route_of( $page_url );
 
 		$report['previous'] = null;
 		$report['trend']    = array();
@@ -750,6 +980,8 @@ final class KWIP_Scan {
 				'issues'     => self::issue_tags( $issues ),
 				'attention'  => in_array( $status, array( 'pending', 'blocked', 'error', 'untested' ), true ) || ! empty( $issues ),
 				'order'      => (int) ( $image['order'] ?? 0 ),
+				'place'      => (string) ( $image['place'] ?? 'other' ),
+				'hint'       => (string) ( $image['hint'] ?? '' ),
 				'count'      => (int) $image['count'],
 			);
 		}
