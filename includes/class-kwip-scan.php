@@ -24,6 +24,24 @@ final class KWIP_Scan {
 		add_action( 'wp_ajax_kwip_scan_fix', array( __CLASS__, 'handle_fix' ) );
 	}
 
+	/**
+	 * Registered on every request (not only in wp-admin), because the block
+	 * editor and page builders save content through the REST API.
+	 */
+	public static function watch(): void {
+		foreach ( array( 'save_post', 'deleted_post', 'trashed_post', 'untrashed_post', 'transition_post_status' ) as $hook ) {
+			add_action( $hook, array( __CLASS__, 'flush_routes' ) );
+		}
+		foreach ( array( 'page_on_front', 'page_for_posts', 'permalink_structure' ) as $option ) {
+			add_action( 'update_option_' . $option, array( __CLASS__, 'flush_routes' ) );
+		}
+	}
+
+	/** Forget the suggested pages so the picker reflects the current content. */
+	public static function flush_routes(): void {
+		delete_transient( 'kwip_routes_2' );
+	}
+
 	public static function enqueue(): void {
 		wp_enqueue_script( 'kwip-scan', KWIP_URL . 'assets/js/scan.js', array( 'jquery', 'wp-a11y', 'kwip-admin' ), KWIP_VERSION, true );
 		wp_localize_script(
@@ -225,7 +243,7 @@ final class KWIP_Scan {
 	 * @return array<int, array{url:string,label:string,path:string,checked:bool}>
 	 */
 	private static function suggested_routes(): array {
-		$cached = get_transient( 'kwip_routes' );
+		$cached = get_transient( 'kwip_routes_2' );
 		if ( is_array( $cached ) ) {
 			return $cached;
 		}
@@ -302,7 +320,7 @@ final class KWIP_Scan {
 			$routes[ $index ]['checked'] = $index < 6;
 		}
 
-		set_transient( 'kwip_routes', $routes, 5 * MINUTE_IN_SECONDS );
+		set_transient( 'kwip_routes_2', $routes, 5 * MINUTE_IN_SECONDS );
 		return $routes;
 	}
 

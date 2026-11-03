@@ -67,6 +67,7 @@ add_action(
 		KWIP_Queue::init();
 		KWIP_Delivery::init();
 		KWIP_Picture::init();
+		KWIP_Scan::watch();
 		if (is_admin()) {
 			KWIP_Admin::init();
 			KWIP_Media::init();
