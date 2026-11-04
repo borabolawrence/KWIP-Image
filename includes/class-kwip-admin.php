@@ -43,6 +43,7 @@ final class KWIP_Admin {
 		wp_enqueue_script( 'kwip-admin', KWIP_URL . 'assets/js/admin.js', array(), KWIP_VERSION, true );
 		KWIP_Bulk::enqueue();
 		KWIP_Scan::enqueue();
+  		KWIP_Cleanup::enqueue();
 	}
 
 	public static function register_shared_assets(): void {
@@ -547,6 +548,18 @@ final class KWIP_Admin {
 							<span class="description"><?php esc_html_e( 'Not recommended. This overrides the size check above.', 'kwip-image-plugin' ); ?></span>
 						</span>
 					</label>
+  					<fieldset class="kwip-field kwip-cleanup">
+  						<legend><strong><?php esc_html_e( 'Cleanup', 'kwip-image-plugin' ); ?></strong></legend>
+  						<label class="kwip-switch">
+  							<input type="checkbox" name="<?php echo esc_attr( $name ); ?>[delete_on_uninstall]" value="1" <?php checked( ! empty( $s['delete_on_uninstall'] ) ); ?>>
+  							<span class="kwip-switch__track" aria-hidden="true"></span>
+  							<span class="kwip-switch__text">
+  								<strong><?php esc_html_e( 'Also delete the WebP files when the plugin is deleted', 'kwip-image-plugin' ); ?></strong>
+  								<span class="description"><?php esc_html_e( 'Off by default. Your settings and records are always removed when the plugin is deleted. Your original images are never deleted.', 'kwip-image-plugin' ); ?></span>
+  							</span>
+  						</label>
+  						<?php KWIP_Cleanup::render_tool(); ?>
+  					</fieldset>
 				</div>
 			</details>
 

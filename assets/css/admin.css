@@ -2081,3 +2081,33 @@ body.rtl .kwip-switch {
 		stroke-dashoffset: 0;
 	}
 }
+
+
+
+
+.kwip-cleanup__tool {
+	margin-top: 12px;
+}
+
+.kwip-cleanup__tool .kwip-progress {
+	max-width: 480px;
+}
+
+.kwip-progress[hidden] {
+	display: none;
+}
+
+#kwip-cleanup-status {
+	margin: 8px 0 0;
+	color: var(--kwip-muted);
+}
+
+#kwip-cleanup-status.is-done {
+	color: #0a5c1e;
+	font-weight: 600;
+	animation: kwip-fade .3s ease-out;
+}
+
+#kwip-cleanup-status.is-error {
+	color: #b32d2e;
+}

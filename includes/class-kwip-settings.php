@@ -35,6 +35,7 @@ final class KWIP_Settings {
 			'method'       => 'auto',
 			'min_savings'  => 5,
 			'allow_larger' => false,
+			'delete_on_uninstall' => false,
 		);
 	}
 
@@ -178,6 +179,7 @@ final class KWIP_Settings {
 		$clean['min_savings'] = max( 0, min( 90, $min_savings ) );
 
 		$clean['allow_larger'] = ! empty( $input['allow_larger'] );
+		$clean['delete_on_uninstall'] = ! empty( $input['delete_on_uninstall'] );
 
 		return $clean;
 	}
