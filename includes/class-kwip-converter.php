@@ -159,6 +159,7 @@ final class KWIP_Converter {
 				'files'          => array(),
 			)
 		);
+		KWIP_Stats::flush();
 	}
 
 	/**

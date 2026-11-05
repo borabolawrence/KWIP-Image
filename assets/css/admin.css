@@ -1924,7 +1924,7 @@ body.rtl .kwip-switch {
 		grid-column: 1 / -1;
 	}
 
-	.kwip-panel>.kwip-card:not(.kwip-health, .kwip-scan, .kwip-advanced, .kwip-bulk),
+	.kwip-panel>.kwip-card:not(.kwip-health, .kwip-scan, .kwip-advanced, .kwip-bulk, .kwip-problems),
 	.kwip-form>.kwip-card+.kwip-card {
 		grid-column: auto;
 	}
@@ -2110,4 +2110,68 @@ body.rtl .kwip-switch {
 
 #kwip-cleanup-status.is-error {
 	color: #b32d2e;
+}
+
+
+.kwip-tag--bad {
+	background: #fbdcdc;
+	color: #8a1f1f;
+}
+
+.kwip-problems__head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 16px;
+}
+
+.kwip-problems__head h2 {
+	margin: 0;
+}
+
+.kwip-problems__head p {
+	margin: 2px 0 0;
+	color: var(--kwip-muted);
+}
+
+.kwip-problems__head .kwip-actions {
+	margin: 0;
+	margin-inline-start: auto;
+}
+
+.kwip-problem-list {
+	margin: 14px 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.kwip-problem {
+	max-height: 600px;
+	overflow: hidden;
+	transition: opacity .35s, max-height .5s var(--kwip-ease), padding .5s var(--kwip-ease);
+}
+
+.kwip-problem.is-leaving {
+	max-height: 0;
+	padding-block: 0;
+	border-top-width: 0;
+	opacity: 0;
+}
+
+.kwip-problem__reason {
+	margin: 8px 0 0;
+}
+
+.kwip-problem__reason strong {
+	display: block;
+}
+
+.kwip-problem__open {
+	display: block;
+	margin-top: 6px;
+	font-size: 13px;
+}
+
+.kwip-problems__note {
+	margin-top: 14px;
 }

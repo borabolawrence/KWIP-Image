@@ -15,6 +15,7 @@ final class KWIP_Stats {
 
 	public static function flush(): void {
 		delete_transient( self::TRANSIENT );
+		KWIP_Problems::flush();
 	}
 
 	/**

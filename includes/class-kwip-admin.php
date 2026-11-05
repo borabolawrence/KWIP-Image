@@ -44,6 +44,7 @@ final class KWIP_Admin {
 		KWIP_Bulk::enqueue();
 		KWIP_Scan::enqueue();
   		KWIP_Cleanup::enqueue();
+  		KWIP_Problems::enqueue();
 	}
 
 	public static function register_shared_assets(): void {
@@ -98,6 +99,7 @@ final class KWIP_Admin {
 		$current = self::current_tab();
 		$report  = KWIP_Environment::get_report();
 		$queued  = KWIP_Bulk::counts()['queued'];
+		$problems = KWIP_Problems::count();
 		$icons   = array(
 			'overview' => 'dashboard',
 			'bulk'     => 'images-alt2',
@@ -134,7 +136,7 @@ final class KWIP_Admin {
 						<span><?php echo esc_html( $label ); ?></span>
 						<?php if ( 'bulk' === $slug ) : ?>
 							<span class="kwip-tab__badge" id="kwip-tab-badge-bulk"<?php echo $queued > 0 ? '' : ' hidden'; ?>><?php echo esc_html( number_format_i18n( $queued ) ); ?></span>
-						<?php elseif ( 'status' === $slug && ! $report['ready'] ) : ?>
+						<?php elseif ( 'status' === $slug && ( ! $report['ready'] || $problems > 0 ) ) : ?>
 							<span class="kwip-tab__dot" aria-hidden="true"></span>
 							<span class="screen-reader-text"><?php esc_html_e( 'Needs attention', 'kwip-image-plugin' ); ?></span>
 						<?php endif; ?>
@@ -664,6 +666,7 @@ final class KWIP_Admin {
 			</ul>
 		</section>
 		<?php
+		KWIP_Problems::render_card();
 		self::render_delivery_card();
 		self::render_queue_card();
 		?>
