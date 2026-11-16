@@ -107,6 +107,7 @@
                 $btn.prop('disabled', false).text(i18n.retry);
             }
             updateHeader(data.remaining);
+            document.dispatchEvent(new CustomEvent('kwip:data-changed'));
         } catch (error) {
             $result.text(error.message).addClass('is-visible is-error');
             $btn.prop('disabled', false).text(i18n.retry);

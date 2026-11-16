@@ -124,7 +124,7 @@ final class KWIP_Bulk {
 			case 'prepare':
 				$report = KWIP_Environment::get_report();
 				if ( ! $report['ready'] ) {
-					wp_send_json_error( array( 'message' => __( 'This server cannot write WebP images. See Server status.', 'kwip-image-plugin' ) ) );
+					wp_send_json_error( array( 'message' => __( 'This server cannot write WebP images. Open the Health check to see what is missing.', 'kwip-image-plugin' ) ) );
 				}
 
 				$scope = ( isset( $_POST['scope'] ) && 'all' === sanitize_key( wp_unslash( $_POST['scope'] ) ) ) ? 'all' : 'new';
@@ -218,15 +218,7 @@ final class KWIP_Bulk {
 			printf(
 				'<div class="notice notice-warning inline"><p>%1$s <a href="%2$s" data-kwip-goto="status">%3$s</a></p></div>',
 				esc_html__( 'Optimizing needs a server that can create WebP images.', 'kwip-image-plugin' ),
-				esc_url(
-					add_query_arg(
-						array(
-							'page' => 'KWIP-webp',
-							'tab'  => 'status',
-						),
-						admin_url( 'admin.php' )
-					)
-				),
+				esc_url( KWIP_Admin::tab_url( 'status' ) ),
 				esc_html__( 'Open the Health check', 'kwip-image-plugin' )
 			);
 			return;
@@ -240,13 +232,7 @@ final class KWIP_Bulk {
 			__( 'Custom (%d)', 'kwip-image-plugin' ),
 			(int) $settings['quality']
 		);
-		$settings_url  = add_query_arg(
-			array(
-				'page' => 'KWIP-webp',
-				'tab'  => 'settings',
-			),
-			admin_url( 'admin.php' )
-		);
+		$settings_url  = KWIP_Admin::tab_url( 'settings' );
 		$optimized_url = add_query_arg(
 			array(
 				'mode'        => 'list',
