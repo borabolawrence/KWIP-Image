@@ -1,0 +1,27 @@
+# Version control & CI
+.git
+.gitignore
+.gitattributes
+.github
+
+# Tests & fixtures
+tests
+
+# Linters, configs & package managers
+.distignore
+.editorconfig
+.eslintrc*
+.phpcs.xml*
+phpcs.xml*
+composer.json
+composer.lock
+package.json
+package-lock.json
+node_modules
+vendor
+
+# OS & editor files
+.DS_Store
+Thumbs.db
+.vscode
+.idea
