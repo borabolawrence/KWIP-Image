@@ -159,6 +159,7 @@
         $result.find('.kwip-img__result[data-attachment="' + id + '"]').text(text).removeClass('is-error').addClass('is-visible');
         $result.find('.kwip-img__action[data-attachment="' + id + '"]').remove();
         announce(text);
+        document.dispatchEvent(new CustomEvent('kwip:data-changed'));
     }
 
     function markFailed(id, message) {

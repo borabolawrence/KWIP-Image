@@ -11,8 +11,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 final class KWIP_Admin {
 
-	private const PAGE = 'KWIP Image Optimizer';
+	private const PAGE = 'kwip-image';
 
+	private const NONCE_ACTION = 'kwip_admin';
 	private static string $hook = '';
 
 	public static function init(): void {
@@ -21,6 +22,19 @@ final class KWIP_Admin {
 		add_action( 'admin_post_kwip_process_now', array( __CLASS__, 'handle_process_now' ) );
 		add_action( 'admin_post_kwip_delivery_apply', array( __CLASS__, 'handle_delivery_apply' ) );
 		add_action( 'admin_post_kwip_delivery_test', array( __CLASS__, 'handle_delivery_test' ) );
+		add_action( 'wp_ajax_kwip_overview', array( __CLASS__, 'handle_overview' ) );
+	}
+
+	public static function handle_overview(): void {
+		check_ajax_referer( self::NONCE_ACTION, 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You are not allowed to do that.', 'kwip-image-plugin' ) ), 403 );
+		}
+
+		ob_start();
+		self::render_overview( KWIP_Environment::get_report() );
+		wp_send_json_success( array( 'html' => (string) ob_get_clean() ) );
 	}
 
 	public static function register_menu(): void {
@@ -41,6 +55,14 @@ final class KWIP_Admin {
 		}
 		wp_enqueue_style( 'kwip-admin', KWIP_URL . 'assets/css/admin.css', array(), KWIP_VERSION );
 		wp_enqueue_script( 'kwip-admin', KWIP_URL . 'assets/js/admin.js', array(), KWIP_VERSION, true );
+		wp_localize_script(
+			'kwip-admin',
+			'kwipAdmin',
+			array(
+				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+				'nonce'   => wp_create_nonce( self::NONCE_ACTION ),
+			)
+		);
 		KWIP_Bulk::enqueue();
 		KWIP_Scan::enqueue();
   		KWIP_Cleanup::enqueue();
@@ -81,7 +103,7 @@ final class KWIP_Admin {
 		return array_key_exists( $tab, self::tabs() ) ? $tab : 'overview';
 	}
 
-	private static function tab_url( string $tab ): string {
+	public static function tab_url( string $tab ): string {
 		return add_query_arg(
 			array(
 				'page' => self::PAGE,

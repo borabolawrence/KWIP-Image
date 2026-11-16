@@ -13,6 +13,7 @@
     var $percent = $('#kwip-cleanup-percent');
     var $status = $('#kwip-cleanup-status');
     var busy = false;
+    var total = cfg.total;
 
     function fmt(template) {
         var args = Array.prototype.slice.call(arguments, 1);
@@ -50,7 +51,7 @@
     }
 
     function setProgress(done) {
-        var pct = cfg.total > 0 ? Math.min(100, Math.round((done / cfg.total) * 100)) : 0;
+        var pct = total > 0 ? Math.min(100, Math.round((done / total) * 100)) : 0;
         $fill.css('width', pct + '%');
         $percent.text(pct + '%');
         $fill.closest('.kwip-bar').attr('aria-valuenow', pct);
@@ -59,8 +60,8 @@
     async function run() {
         busy = true;
         $button.prop('disabled', true).text(i18n.working);
-        $status.removeClass('is-error').text('');
-        $wrap.prop('hidden', false);
+        $status.removeClass('is-error is-done').text('');
+        $wrap.addClass('is-running').prop('hidden', false);
         setProgress(0);
 
         var after = 0;
@@ -79,7 +80,7 @@
                     break;
                 }
             }
-            setProgress(cfg.total);
+            setProgress(total);
             var text = fmt(i18n.done, num(images), num(files));
             $status.addClass('is-done').text(text);
             announce(text);
@@ -91,7 +92,30 @@
         }
         $wrap.removeClass('is-running');
         busy = false;
+        document.dispatchEvent(new CustomEvent('kwip:data-changed'));
     }
+
+    function refresh() {
+        if (busy) {
+            return;
+        }
+        $.post(cfg.ajaxUrl, { action: 'kwip_cleanup', nonce: cfg.nonce, op: 'status' })
+            .done(function (response) {
+                if (busy || !response || !response.success) {
+                    return;
+                }
+                total = Number(response.data.total) || 0;
+                $('#kwip-cleanup-count').text(response.data.text);
+                $button.prop('disabled', total === 0);
+
+                if (total > 0 && $status.hasClass('is-done')) {
+                    $status.removeClass('is-done').text('');
+                    $wrap.prop('hidden', true);
+                }
+            });
+    }
+
+    document.addEventListener('kwip:data-changed', refresh);
 
     $button.on('click', async function () {
         if (busy) {

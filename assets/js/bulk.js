@@ -62,6 +62,10 @@
         els.message.text(text || '');
     }
 
+    function changed() {
+        document.dispatchEvent(new CustomEvent('kwip:data-changed'));
+    }
+
 
     function setBadge(n) {
         var badge = document.getElementById('kwip-tab-badge-bulk');
@@ -154,6 +158,9 @@
 
             updateProgress();
             setStatus(fmt(cfg.i18n.converting, num(state.done), num(state.done + state.remaining)));
+            if (d.processed > 0) {
+                changed();
+            }
             if (d.counts) {
                 setCounts(d.counts);
             }
@@ -208,6 +215,7 @@
         } finally {
             state.running = false;
             render();
+            changed();
         }
     }
 
@@ -246,8 +254,46 @@
         if (!ok) {
             return;
         }
+
+        els.cancel.prop('disabled', true);
+        setMessage('');
+        try {
+            var data = await post('cancel');
+            state.remaining = 0;
+            state.done = 0;
+            if (data && data.counts) {
+                setCounts(data.counts);
+                setBadge(data.counts.queued);
+            }
+            updateProgress();
+            setStatus(cfg.i18n.cancelled);
+            // say(cfg.i18n.cancelled);
+            say(cfg.i18n.cancelled);
+            changed();
+        } catch (error) {
+            setMessage(error && error.message ? error.message : cfg.i18n.error);
+        }
+        els.cancel.prop('disabled', false);
+        render();
     });
 
+
+    document.addEventListener('kwip:data-changed', async function () {
+        if (state.running) {
+            return;
+        }
+        try {
+            var counts = await post('status');
+            if (!state.running) {
+                setCounts(counts);
+                setBadge(counts.queued);
+                state.remaining = counts.queued;
+                render();
+            }
+        } catch (e) {
+            // The numbers are informational only.
+        }
+    });
 
     if (state.remaining > 0) {
         setStatus(fmt(cfg.i18n.waiting, num(state.remaining)));

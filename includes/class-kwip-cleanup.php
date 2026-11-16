@@ -48,14 +48,7 @@ final class KWIP_Cleanup {
 		?>
 		<div class="kwip-cleanup__tool">
 			<p class="description">
-				<?php
-				echo esc_html(
-					sprintf(
-						_n( '%s image currently has WebP copies.', '%s images currently have WebP copies.', $count, 'kwip-image-plugin' ),
-						number_format_i18n( $count )
-					)
-				);
-				?>
+				<span id="kwip-cleanup-count"><?php echo esc_html( self::count_text( $count ) ); ?></span>
 				<?php esc_html_e( 'Deleting them sends visitors back to your original images. Originals are never deleted.', 'kwip-image-plugin' ); ?>
 			</p>
 			<button type="button" class="button" id="kwip-cleanup-btn" <?php disabled( 0 === $count ); ?>><?php esc_html_e( 'Delete all WebP files now', 'kwip-image-plugin' ); ?></button>
@@ -70,6 +63,13 @@ final class KWIP_Cleanup {
 		<?php
 	}
 
+	private static function count_text( int $count ): string {
+		return sprintf(
+			_n( '%s image currently has WebP copies.', '%s images currently have WebP copies.', $count, 'kwip-image-plugin' ),
+			number_format_i18n( $count )
+		);
+	}
+
 	public static function handle_ajax(): void {
 		check_ajax_referer( self::NONCE_ACTION, 'nonce' );
 
@@ -79,6 +79,17 @@ final class KWIP_Cleanup {
 
 		if ( function_exists( 'set_time_limit' ) ) {
 			@set_time_limit( 60 );
+		}
+
+		$op = isset( $_POST['op'] ) ? sanitize_key( wp_unslash( $_POST['op'] ) ) : '';
+		if ( 'status' === $op ) {
+			$count = (int) KWIP_Stats::savings()['optimized'];
+			wp_send_json_success(
+				array(
+					'total' => $count,
+					'text'  => self::count_text( $count ),
+				)
+			);
 		}
 
 		$after = isset( $_POST['after'] ) ? absint( $_POST['after'] ) : 0;

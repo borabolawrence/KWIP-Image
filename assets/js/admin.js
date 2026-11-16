@@ -58,6 +58,56 @@
 
 	window.kwipRunCountUps = runCountUps;
 
+	var changeCount = 0;
+	var overviewStale = false;
+	var overviewBusy = false;
+
+	function refreshOverview() {
+		var cfg = window.kwipAdmin;
+		var panel = document.getElementById('kwip-panel-overview');
+		if (!cfg || !panel || overviewBusy || !window.fetch) {
+			return;
+		}
+
+		var seen = changeCount;
+		var ok = false;
+		var body = new FormData();
+		body.append('action', 'kwip_overview');
+		body.append('nonce', cfg.nonce);
+
+		overviewBusy = true;
+		window.fetch(cfg.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: body })
+			.then(function (response) {
+				return response.json();
+			})
+			.then(function (json) {
+				if (json && json.success && json.data && 'string' === typeof json.data.html) {
+					panel.innerHTML = json.data.html;
+					runCountUps(panel);
+					overviewStale = changeCount !== seen;
+					ok = true;
+				}
+			})
+			.catch(function () {
+				// The Overview simply stays as it was; the next change tries again.
+			})
+			.then(function () {
+				overviewBusy = false;
+				if (ok && overviewStale && !panel.hidden) {
+					refreshOverview();
+				}
+			});
+	}
+
+	document.addEventListener('kwip:data-changed', function () {
+		var panel = document.getElementById('kwip-panel-overview');
+		changeCount++;
+		overviewStale = true;
+		if (panel && !panel.hidden) {
+			refreshOverview();
+		}
+	});
+
 
 	function initTabs() {
 		var root = document.querySelector('.kwip-wrap');
@@ -113,6 +163,10 @@
 					}
 				}
 			});
+
+			if ('overview' === slug && overviewStale) {
+				refreshOverview();
+			}
 
 			place();
 
