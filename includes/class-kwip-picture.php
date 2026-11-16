@@ -25,6 +25,13 @@ final class KWIP_Picture {
 	public static function init(): void {
 		add_action( 'template_redirect', array( __CLASS__, 'start' ), 1 );
 		add_action( 'wp_head', array( __CLASS__, 'print_style' ), 1 );
+		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_script' ) );
+	}
+
+	public static function enqueue_script(): void {
+		if ( self::$active ) {
+			wp_enqueue_script( 'kwip-picture', KWIP_URL . 'assets/js/picture.js', array(), KWIP_VERSION, true );
+		}
 	}
 
 	public static function start(): void {
@@ -128,21 +135,38 @@ final class KWIP_Picture {
 			return $tag;
 		}
 
-		$attrs  = self::attributes( $tag );
+		$attrs = self::attributes( $tag );
+
+		/**
+		 * Filters whether an image is left exactly as it is (not wrapped in <picture>).
+		 *
+		 * @param bool                 $skip  Whether to skip the image. Default false.
+		 * @param string               $tag   The raw <img> tag.
+		 * @param array<string,string> $attrs Its attributes, with lower-case names.
+		 */
+		if ( (bool) apply_filters( 'kwip_picture_skip', false, $tag, $attrs ) ) {
+			return $tag;
+		}
+
 		$src    = $attrs['src'] ?? '';
 		$srcset = $attrs['srcset'] ?? '';
 		$sizes  = $attrs['sizes'] ?? '';
 
 		$candidates = array();
 		if ( '' !== $srcset ) {
+			$converted = 0;
 			foreach ( preg_split( '/,\s+/', trim( $srcset ) ) ?: array() as $candidate ) {
 				if ( ! preg_match( '/^(\S+)(?:\s+(\S+))?$/', trim( $candidate ), $m ) ) {
-					continue;
+					return $tag;
 				}
 				$webp = self::webp_url( $m[1] );
 				if ( null !== $webp ) {
-					$candidates[] = $webp . ( isset( $m[2] ) ? ' ' . $m[2] : '' );
+					++$converted;
 				}
+				$candidates[] = ( $webp ?? $m[1] ) . ( isset( $m[2] ) ? ' ' . $m[2] : '' );
+			}
+			if ( 0 === $converted ) {
+				return $tag;
 			}
 		} elseif ( '' !== $src ) {
 			$webp = self::webp_url( $src );
