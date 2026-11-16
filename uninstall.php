@@ -84,14 +84,14 @@ function kwip_uninstall_site(): void {
 
 	wp_clear_scheduled_hook( 'kwip_process_queue' );
 
-	foreach ( array( '_kwip_data', '_kwip_queued', '_kwip_attempts' ) as $meta_key ) {
+	foreach ( array( '_kwip_data', '_kwip_status', '_kwip_queued', '_kwip_attempts' ) as $meta_key ) {
 		delete_post_meta_by_key( $meta_key );
 	}
 
-	foreach ( array( 'kwip_settings', 'kwip_scan_history', 'kwip_queue_run_lock' ) as $option ) {
+	foreach ( array( 'kwip_settings', 'kwip_scan_history', 'kwip_queue_run_lock', 'kwip_db_version' ) as $option ) {
 		delete_option( $option );
 	}
-	foreach ( array( 'kwip_savings', 'kwip_routes_2' ) as $transient ) {
+	foreach ( array( 'kwip_savings', 'kwip_routes_2', 'kwip_problem_count', 'kwip_optimized_count' ) as $transient ) {
 		delete_transient( $transient );
 	}
 

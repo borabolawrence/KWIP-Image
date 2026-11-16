@@ -18,6 +18,9 @@ final class KWIP_Converter {
 	/** Post meta key holding the conversion record. */
 	public const META_KEY = '_kwip_data';
 
+	/** Post meta key mirroring the record's status: converted | partial | skipped | failed. */
+	public const META_STATUS = '_kwip_status';
+
 	/** Seconds before a lock from a crashed run is considered stale. */
 	private const LOCK_TTL = 300;
 
@@ -108,7 +111,7 @@ final class KWIP_Converter {
 				'webp_total'     => $webp_total,
 				'files'          => $results,
 			);
-			update_post_meta( $attachment_id, self::META_KEY, $data );
+			self::save_record( $attachment_id, $data );
 			KWIP_Stats::flush();
 
 			return $data;
@@ -146,9 +149,8 @@ final class KWIP_Converter {
 		if ( is_array( $existing ) && ! empty( $existing['files'] ) ) {
 			return;
 		}
-		update_post_meta(
+		self::save_record(
 			$attachment_id,
-			self::META_KEY,
 			array(
 				'version'        => 1,
 				'status'         => 'failed',
@@ -301,8 +303,14 @@ final class KWIP_Converter {
 		}
 
 		delete_post_meta( $attachment_id, self::META_KEY );
+		delete_post_meta( $attachment_id, self::META_STATUS );
 		KWIP_Stats::flush();
 		return $removed;
+	}
+
+	private static function save_record( int $attachment_id, array $data ): void {
+		update_post_meta( $attachment_id, self::META_KEY, $data );
+		update_post_meta( $attachment_id, self::META_STATUS, (string) ( $data['status'] ?? 'failed' ) );
 	}
 
 	private static function delete_webp( string $webp ): bool {

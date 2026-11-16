@@ -49,24 +49,16 @@ final class KWIP_Problems {
 	}
 
 	/**
-	 * Top-level status of the stored record is "failed" or "partial". The
-	 * leading "i:1;" (the record version) keeps this from matching the
-	 * per-file entries nested inside converted records.
+	 * Images whose record status is "failed" or "partial".
 	 *
-	 * @return array<string|int, mixed>
+	 * @return array<int, array<string, mixed>>
 	 */
 	private static function meta_query(): array {
 		return array(
-			'relation' => 'OR',
 			array(
-				'key'     => KWIP_Converter::META_KEY,
-				'value'   => 'i:1;s:6:"status";s:6:"failed";',
-				'compare' => 'LIKE',
-			),
-			array(
-				'key'     => KWIP_Converter::META_KEY,
-				'value'   => 'i:1;s:6:"status";s:7:"partial";',
-				'compare' => 'LIKE',
+				'key'     => KWIP_Converter::META_STATUS,
+				'value'   => array( 'failed', 'partial' ),
+				'compare' => 'IN',
 			),
 		);
 	}

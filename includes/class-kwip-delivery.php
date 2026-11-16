@@ -65,6 +65,23 @@ final class KWIP_Delivery {
 	}
 
 
+	/**
+	 * Remove the block written under the plugin's earlier name.
+	 *
+	 * @return bool True when an old block was found and removed.
+	 */
+	public static function remove_legacy_rules(): bool {
+		$file = self::htaccess_path();
+		if ( ! is_file( $file ) || array() === extract_from_markers( $file, 'Guanzon WebP Image' ) ) {
+			return false;
+		}
+		if ( ! wp_is_writable( $file ) ) {
+			return false;
+		}
+		insert_with_markers( $file, 'Guanzon WebP Image', array() );
+		return true;
+	}
+
 	/** Write or remove the server rules to match the chosen delivery method. */
 	public static function apply(): true|WP_Error {
 		return 'server' === self::active_method() ? self::write_rules() : self::remove_rules();

@@ -652,6 +652,7 @@ final class KWIP_Admin {
 			array( __( 'Imagick WebP support', 'kwip-image-plugin' ), $r['imagick_webp'] ? $yes : $no ),
 			array( __( 'PHP memory_limit', 'kwip-image-plugin' ), $r['memory_limit'] ),
 			array( __( 'PHP max_execution_time (seconds)', 'kwip-image-plugin' ), $r['max_execution'] ),
+			array( __( 'Plugin data version', 'kwip-image-plugin' ), self::data_version_label() ),
 		);
 		?>
 		<section class="kwip-card kwip-health">
@@ -709,6 +710,26 @@ final class KWIP_Admin {
 			</div>
 		</details>
 		<?php
+	}
+
+	private static function data_version_label(): string {
+		$stored = (int) get_option( 'kwip_db_version', 0 );
+
+		if ( $stored >= KWIP_Upgrade::DB_VERSION ) {
+			return sprintf(
+				__( '%d (up to date)', 'kwip-image-plugin' ),
+				$stored
+			);
+		}
+		if ( $stored > 0 ) {
+			return sprintf(
+				__( '%1$d (upgrading to %2$d)', 'kwip-image-plugin' ),
+				$stored,
+				KWIP_Upgrade::DB_VERSION
+			);
+		}
+
+		return __( 'Not yet run', 'kwip-image-plugin' );
 	}
 
 	public static function handle_process_now(): void {

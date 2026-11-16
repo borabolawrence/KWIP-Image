@@ -13,6 +13,7 @@ final class KWIP_Media {
 
 	private const NONCE_ACTION = 'kwip_media';
 	private const FILTER_VAR = 'kwip_filter';
+	private const COUNT_KEY  = 'kwip_optimized_count';
 
 	private static bool $assets_loaded = false;
 
@@ -144,21 +145,34 @@ final class KWIP_Media {
 	}
 
 	/**
-	 * Matches attachments whose stored record contains at least one file with
-	 * status "converted". The record is a serialized array, so this looks for
-	 * the serialized text of that status (per-file entries use the same text).
+	 * Matches attachments with at least one converted file: their record status
+	 * is "converted", or "partial" (some sizes converted, some failed).
 	 *
 	 * @return array<string, string>
 	 */
 	public  static function optimized_meta_query(): array {
 		return array(
-			'key'     => KWIP_Converter::META_KEY,
-			'value'   => 's:6:"status";s:9:"converted"',
-			'compare' => 'LIKE',
+			'key'     => KWIP_Converter::META_STATUS,
+			'value'   => array( 'converted', 'partial' ),
+			'compare' => 'IN',
 		);
 	}
 
+	public static function flush_count(): void {
+		delete_transient( self::COUNT_KEY );
+	}
+
 	private static function optimized_count(): int {
+		$cached = get_transient( self::COUNT_KEY );
+		if ( false !== $cached ) {
+			return (int) $cached;
+		}
+		$count = self::count_optimized();
+		set_transient( self::COUNT_KEY, $count, 10 * MINUTE_IN_SECONDS );
+		return $count;
+	}
+
+	private static function count_optimized(): int {
 		$query = new WP_Query(
 			array(
 				'post_type'      => 'attachment',
