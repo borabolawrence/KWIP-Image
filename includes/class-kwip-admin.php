@@ -414,7 +414,6 @@ final class KWIP_Admin {
 		?>
 		<form method="post" action="options.php" class="kwip-form">
 			<?php settings_fields( KWIP_Settings::GROUP ); ?>
-			<input type="hidden" name="<?php echo esc_attr( $name ); ?>[keep_backups]" value="1">
 
 			<section class="kwip-card">
 				<h2><?php esc_html_e( 'Image quality', 'kwip-image-plugin' ); ?></h2>

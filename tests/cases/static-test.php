@@ -130,4 +130,51 @@ return array(
 			KT::ok( str_contains( $source, "'" . $name . "'" ), "uninstall.php does not remove '$name'" );
 		}
 	},
+
+		'every setting is read somewhere' => static function () {
+		$source = '';
+		foreach ( glob( KWIP_PATH . 'includes/*.php' ) ?: array() as $file ) {
+			if ( 'class-kwip-settings.php' !== basename( $file ) ) {
+				$source .= (string) file_get_contents( $file );
+			}
+		}
+		$source .= (string) file_get_contents( KWIP_PATH . 'uninstall.php' );
+
+		foreach ( array_keys( KWIP_Settings::defaults() ) as $key ) {
+			KT::ok(
+				str_contains( $source, "['" . $key . "']" ) || str_contains( $source, '["' . $key . '"]' ),
+				"the setting '$key' is stored but never read"
+			);
+		}
+	},
+
+	'licence files agree with the plugin header' => static function () {
+		$source = (string) file_get_contents( KWIP_FILE );
+		KT::ok( (bool) preg_match( '/^[ \t\/*#@]*License:[ \t]*GPL-2\.0-or-later[ \t]*\r?$/mi', $source ), 'the License header is GPL-2.0-or-later' );
+		KT::ok( (bool) preg_match( '/^[ \t\/*#@]*License URI:[ \t]*https?:\/\/\S+/mi', $source ), 'a License URI header exists' );
+
+		$licence = KWIP_PATH . 'LICENSE';
+		if ( is_file( $licence ) ) {
+			$text = (string) file_get_contents( $licence );
+			KT::ok( str_contains( $text, 'GNU GENERAL PUBLIC LICENSE' ) && str_contains( $text, 'Version 2, June 1991' ), 'LICENSE is the GPL version 2 text' );
+		} else {
+			KT::ok( false, 'the LICENSE file is missing' );
+		}
+
+		$readme = is_file( KWIP_PATH . 'README.md' ) ? (string) file_get_contents( KWIP_PATH . 'README.md' ) : '';
+		KT::ok( '' !== $readme, 'README.md exists' );
+		KT::ok( ! str_contains( $readme, 'No license has been specified' ), 'the README no longer says there is no license' );
+		KT::ok( str_contains( $readme, 'GPL-2.0-or-later' ), 'the README names the license' );
+	},
+
+	'release archives leave out the tests' => static function () {
+		$file = KWIP_PATH . '.gitattributes';
+		if ( ! is_file( $file ) ) {
+			KT::ok( false, '.gitattributes is missing' );
+			return;
+		}
+		$text = (string) file_get_contents( $file );
+		KT::ok( (bool) preg_match( '#^/tests\s+export-ignore#m', $text ), '/tests is marked export-ignore' );
+		KT::ok( (bool) preg_match( '/^\*\s+text=auto/m', $text ), 'line endings are normalized' );
+	},
 );

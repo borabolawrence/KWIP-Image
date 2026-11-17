@@ -172,4 +172,26 @@ return array(
 		KT::same( $message, KWIP_Delivery::take_flash(), 'the message comes back' );
 		KT::same( null, KWIP_Delivery::take_flash(), 'and only once' );
 	},
+		'settings left over from earlier versions are ignored' => static function () {
+		update_option(
+			KWIP_Settings::OPTION,
+			array(
+				'quality'      => 60,
+				'keep_backups' => true,
+				'lossless'     => true,
+			)
+		);
+		$s = KWIP_Settings::get();
+		KT::same( 60, $s['quality'], 'the saved value is kept' );
+		KT::ok( ! array_key_exists( 'keep_backups', $s ) && ! array_key_exists( 'lossless', $s ), 'removed settings are not returned' );
+
+		$clean = KWIP_Settings::sanitize(
+			array(
+				'quality'      => '60',
+				'keep_backups' => '1',
+				'lossless'     => '1',
+			)
+		);
+		KT::ok( ! array_key_exists( 'keep_backups', $clean ) && ! array_key_exists( 'lossless', $clean ), 'saving drops them from storage' );
+	},
 );

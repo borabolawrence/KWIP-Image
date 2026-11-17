@@ -19,22 +19,21 @@ final class KWIP_Settings {
 	}
 
 	/**
-	 * Default values. Confirmed defaults: quality 100, auto-convert on,
-	 * backups on, WebP delivery with original fallback.
+	 * Default values. Confirmed defaults: quality 100, auto-convert on, WebP
+	 * delivery with original fallback. There is no backup setting: originals
+	 * are never modified, so there is nothing to back up.
 	 *
 	 * @return array<string, mixed>
 	 */
 	public static function defaults(): array {
 		return array(
-			'quality'      => 100,
-			'lossless'     => false,
-			'formats'      => array( 'jpeg', 'png' ),
-			'auto_convert' => true,
-			'keep_backups' => true,
-			'delivery'     => 'webp_fallback',
-			'method'       => 'auto',
-			'min_savings'  => 5,
-			'allow_larger' => false,
+			'quality'             => 100,
+			'formats'             => array( 'jpeg', 'png' ),
+			'auto_convert'        => true,
+			'delivery'            => 'webp_fallback',
+			'method'              => 'auto',
+			'min_savings'         => 5,
+			'allow_larger'        => false,
 			'delete_on_uninstall' => false,
 		);
 	}
@@ -148,9 +147,6 @@ final class KWIP_Settings {
 		}
 		$clean['quality'] = $quality;
 
-		$report            = KWIP_Environment::get_report();
-		$clean['lossless'] = ! empty( $input['lossless'] ) && $report['gd_lossless'];
-
 		$formats = array();
 		if ( isset( $input['formats'] ) && is_array( $input['formats'] ) ) {
 			$submitted = array_map( 'sanitize_key', $input['formats'] );
@@ -168,7 +164,6 @@ final class KWIP_Settings {
 		$clean['formats'] = $formats;
 
 		$clean['auto_convert'] = ! empty( $input['auto_convert'] );
-		$clean['keep_backups'] = ! empty( $input['keep_backups'] );
 
 		$delivery          = isset( $input['delivery'] ) ? sanitize_key( $input['delivery'] ) : $defaults['delivery'];
 		$clean['delivery'] = in_array( $delivery, array( 'webp_fallback', 'off' ), true ) ? $delivery : $defaults['delivery'];
