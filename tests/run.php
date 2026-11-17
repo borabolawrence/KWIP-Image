@@ -148,6 +148,7 @@ foreach ( glob( __DIR__ . '/cases/*-test.php' ) ?: array() as $file ) {
 			KT::fail( 'PHP notice: ' . $notice );
 		}
 		KT::restore();
+		KT::cleanup();
 
 		if ( KT::$test_failed ) {
 			++KT::$failed;

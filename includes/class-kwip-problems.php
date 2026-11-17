@@ -159,42 +159,42 @@ final class KWIP_Problems {
 	 */
 	private static function explain( string $code, string $message ): array {
 		switch ( $code ) {
-			case 'gwip_disk_space':
+			case 'kwip_disk_space':
 				return array(
 					__( 'The server ran out of free disk space.', 'kwip-image-plugin' ),
 					__( 'Free up some space, then try again.', 'kwip-image-plugin' ),
 				);
-			case 'gwip_publish_failed':
-			case 'gwip_publish_invalid':
-			case 'gwip_unwritable':
+			case 'kwip_publish_failed':
+			case 'kwip_publish_invalid':
+			case 'kwip_unwritable':
 				return array(
 					__( 'The server could not save the optimized file.', 'kwip-image-plugin' ),
 					__( 'Check that the uploads folder can be written to, then try again.', 'kwip-image-plugin' ),
 				);
-			case 'gwip_verify_missing':
-			case 'gwip_verify_empty':
-			case 'gwip_verify_header':
-			case 'gwip_verify_mime':
-			case 'gwip_verify_dimensions':
-			case 'gwip_verify_mismatch':
+			case 'kwip_verify_missing':
+			case 'kwip_verify_empty':
+			case 'kwip_verify_header':
+			case 'kwip_verify_mime':
+			case 'kwip_verify_dimensions':
+			case 'kwip_verify_mismatch':
 				return array(
 					__( 'The optimized file did not pass its safety check, so it was not used.', 'kwip-image-plugin' ),
 					__( 'Try again. If it keeps happening, the original image may be damaged.', 'kwip-image-plugin' ),
 				);
-			case 'gwip_unreadable':
-			case 'gwip_path':
-			case 'gwip_empty':
-			case 'gwip_no_file':
+			case 'kwip_unreadable':
+			case 'kwip_path':
+			case 'kwip_empty':
+			case 'kwip_no_file':
 				return array(
 					__( 'The original file is missing or cannot be read.', 'kwip-image-plugin' ),
 					__( 'Upload the image again, or restore it from a backup.', 'kwip-image-plugin' ),
 				);
-			case 'gwip_no_webp':
+			case 'kwip_no_webp':
 				return array(
 					__( 'This server cannot create WebP images.', 'kwip-image-plugin' ),
 					__( 'Open the Health check to see what is missing.', 'kwip-image-plugin' ),
 				);
-			case 'gwip_locked':
+			case 'kwip_locked':
 				return array(
 					__( 'The image was busy being processed.', 'kwip-image-plugin' ),
 					__( 'Wait a moment, then try again.', 'kwip-image-plugin' ),

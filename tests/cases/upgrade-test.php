@@ -103,7 +103,7 @@ return array(
 
 		$run( KWIP_Upgrade::DB_VERSION );
 
-		KT::ok( '' !== (string) get_post_meta( $id, '_gwip_data', true ), 'the old record was not touched' );
+		KT::ok( is_array( get_post_meta( $id, '_gwip_data', true ) ), 'the old record was not touched' );
 	},
 
 	'the upgrade needs manage_options' => static function () use ( $run ) {

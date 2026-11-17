@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Plugin Name:       KWIP Image 
+* Plugin Name:       KWIP Image
  * Description:       Converts supported images to WebP to reduce image size and improve loading performance, keeping originals and an original-format fallback.
  * Version:           0.4.2
  * Requires at least: 6.0
  * Requires PHP:      8.2
  * Author:            kiyouh.
  * License:           GPL-2.0-or-later
- * Text Domain:       KWIP Image
+* Text Domain:       kwip-image-plugin
  */
 
 if (! defined('ABSPATH')) {
