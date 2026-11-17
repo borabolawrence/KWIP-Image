@@ -80,7 +80,7 @@ final class KWIP_Converter {
 			$webp_total     = 0;
 
 			foreach ( $files as $name => $path ) {
-				$result = self::convert_file( $path, $settings );
+				$result = self::convert_file( $path, $settings, $attachment_id );
 
 				if ( 'converted' !== $result['status']
 					&& isset( $previous_files[ $name ]['status'] )
@@ -113,11 +113,20 @@ final class KWIP_Converter {
 			);
 			self::save_record( $attachment_id, $data );
 			KWIP_Stats::flush();
-
-			return $data;
 		} finally {
 			self::release_lock( $attachment_id );
 		}
+
+		/**
+		 * Fires after an image has been processed. Check $record['status']:
+		 * converted, partial, skipped or failed. Useful for purging a CDN.
+		 *
+		 * @param int                  $attachment_id The attachment.
+		 * @param array<string, mixed> $record        The stored conversion record.
+		 */
+		do_action( 'kwip_attachment_processed', $attachment_id, $data );
+
+		return $data;
 	}
 
 	/**
@@ -131,15 +140,24 @@ final class KWIP_Converter {
 			return new WP_Error( 'kwip_locked', __( 'This image is already being processed.', 'kwip-image-plugin' ) );
 		}
 		try {
-			return self::purge( $attachment_id );
+			$removed = self::purge( $attachment_id );
 		} finally {
 			self::release_lock( $attachment_id );
 		}
+
+		/**
+		 * Fires after the WebP files of an image were removed (Restore, or
+		 * "Delete all WebP files"). The original files were not changed.
+		 *
+		 * @param int $attachment_id The attachment.
+		 * @param int $removed       Number of WebP files removed.
+		 */
+		do_action( 'kwip_attachment_restored', $attachment_id, $removed );
+
+		return $removed;
 	}
 
-
-
-	 /**
+	/**
 	 * Store a failure record for errors raised before any file was processed.
 	 * An existing record that tracks generated files is left alone so those
 	 * files stay known and removable.
@@ -195,12 +213,26 @@ final class KWIP_Converter {
 	 * @param array<string, mixed> $settings Plugin settings.
 	 * @return array<string, mixed>
 	 */
-	private static function convert_file( string $source, array $settings ): array {
+	private static function convert_file( string $source, array $settings, int $attachment_id ): array {
 		$valid = KWIP_Files::validate_source( $source, $settings['formats'] );
 		if ( is_wp_error( $valid ) ) {
 			$skip_codes = array( 'kwip_format_disabled', 'kwip_unsupported', 'kwip_animated' );
 			$status     = in_array( $valid->get_error_code(), $skip_codes, true ) ? 'skipped' : 'failed';
 			return self::result( $status, $valid->get_error_code(), $valid->get_error_message() );
+		}
+
+		/**
+		 * Filters whether one image file is converted. Return false to leave it
+		 * as it is: it is recorded as skipped, and any WebP made for it earlier
+		 * is removed. To exclude a whole image, return false for every file of
+		 * that attachment.
+		 *
+		 * @param bool   $convert       Whether to convert the file. Default true.
+		 * @param string $path          Absolute path of the original file.
+		 * @param int    $attachment_id The attachment it belongs to.
+		 */
+		if ( ! apply_filters( 'kwip_convert_file', true, $source, $attachment_id ) ) {
+			return self::result( 'skipped', 'kwip_excluded', __( 'Excluded by a filter.', 'kwip-image-plugin' ), $valid['size'] );
 		}
 
 		$original = $valid['size'];
@@ -215,8 +247,20 @@ final class KWIP_Converter {
 			return self::result( 'failed', $space->get_error_code(), $space->get_error_message(), $original );
 		}
 
-		$temp    = KWIP_Files::temp_path( $dest );
-		$encoded = self::encode( $source, $valid['format'], $temp, (int) $settings['quality'] );
+		$temp = KWIP_Files::temp_path( $dest );
+
+		/**
+		 * Filters the WebP quality for one file. Values outside 1 to 100 are
+		 * clamped. The stored record still shows the quality from Settings.
+		 *
+		 * @param int    $quality Quality from Settings.
+		 * @param string $path    Absolute path of the original file.
+		 * @param string $format  jpeg or png.
+		 */
+		$quality = (int) apply_filters( 'kwip_webp_quality', (int) $settings['quality'], $source, $valid['format'] );
+		$quality = max( 1, min( 100, $quality ) );
+
+		$encoded = self::encode( $source, $valid['format'], $temp, $quality );
 		if ( is_wp_error( $encoded ) ) {
 			KWIP_Files::discard_temp( $temp );
 			return self::result( 'failed', $encoded->get_error_code(), $encoded->get_error_message(), $original );
@@ -261,7 +305,15 @@ final class KWIP_Converter {
 				return $set;
 			}
 
-			$saved = $editor->save( $temp, 'image/webp' );
+			$use_quality = static function ( $default, $mime = '' ) use ( $quality ) {
+				return 'image/webp' === $mime ? $quality : $default;
+			};
+			add_filter( 'wp_editor_set_quality', $use_quality, PHP_INT_MAX, 2 );
+			try {
+				$saved = $editor->save( $temp, 'image/webp' );
+			} finally {
+				remove_filter( 'wp_editor_set_quality', $use_quality, PHP_INT_MAX );
+			}
 			if ( is_wp_error( $saved ) ) {
 				return $saved;
 			}
@@ -308,6 +360,7 @@ final class KWIP_Converter {
 		return $removed;
 	}
 
+	/** The only place a conversion record is written, so the status can never drift from it. */
 	private static function save_record( int $attachment_id, array $data ): void {
 		update_post_meta( $attachment_id, self::META_KEY, $data );
 		update_post_meta( $attachment_id, self::META_STATUS, (string) ( $data['status'] ?? 'failed' ) );

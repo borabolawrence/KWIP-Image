@@ -70,7 +70,14 @@ final class KWIP_Picture {
 				return false;
 			}
 		}
-		return true;
+
+		/**
+		 * Filters whether the page method rewrites the current page. This runs
+		 * on template_redirect, so conditional tags such as is_page() work.
+		 *
+		 * @param bool $enabled Default true.
+		 */
+		return (bool) apply_filters( 'kwip_picture_enabled', true );
 	}
 
 	/**

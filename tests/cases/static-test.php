@@ -177,4 +177,26 @@ return array(
 		KT::ok( (bool) preg_match( '#^/tests\s+export-ignore#m', $text ), '/tests is marked export-ignore' );
 		KT::ok( (bool) preg_match( '/^\*\s+text=auto/m', $text ), 'line endings are normalized' );
 	},
+		'every hook the plugin offers is documented in the README' => static function () {
+		$readme = is_file( KWIP_PATH . 'README.md' ) ? (string) file_get_contents( KWIP_PATH . 'README.md' ) : '';
+		$hooks  = array();
+		foreach ( glob( KWIP_PATH . 'includes/*.php' ) ?: array() as $file ) {
+			if ( preg_match_all( '/(?:apply_filters|do_action)\(\s*\'(kwip_[a-z_]+)\'/', (string) file_get_contents( $file ), $m ) ) {
+				$hooks = array_merge( $hooks, $m[1] );
+			}
+		}
+		$hooks = array_unique( $hooks );
+		KT::ok( count( $hooks ) >= 6, 'found the plugin\'s hooks (got ' . count( $hooks ) . ')' );
+		foreach ( $hooks as $hook ) {
+			KT::ok( str_contains( $readme, '`' . $hook . '`' ), "the hook '$hook' is not documented in README.md" );
+		}
+	},
+		'every file the plugin loads exists' => static function () {
+		$source = (string) file_get_contents( KWIP_FILE );
+		preg_match_all( '/require_once\s+KWIP_PATH\s*\.\s*\'([^\']+)\'/', $source, $m );
+		KT::ok( count( $m[1] ) >= 10, 'found the files the plugin loads (got ' . count( $m[1] ) . ')' );
+		foreach ( $m[1] as $relative ) {
+			KT::ok( is_file( KWIP_PATH . $relative ), "the main file loads '$relative', but it does not exist" );
+		}
+	},
 );

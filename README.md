@@ -30,7 +30,7 @@ A WordPress plugin that converts JPG and PNG images to WebP, so pages load faste
 3. Open **KWIP Image** in the admin menu, then **Optimize images** to convert your existing library.
 
 ```bash
-git clone https://github.com/borabolawrence/KWIP-Image.git
+git clone [https://github.com/borabolawrence/KWIP-Image.git](https://github.com/borabolawrence/KWIP-Image.git)
 ```
 
 ## How WebP reaches your visitors
@@ -58,13 +58,27 @@ Add `?kwip_off=1` to any page address to see it without the page method, for com
 
 ## For developers
 
-- `data-kwip-skip` on an `<img>` leaves that image alone in the page method.
-- The `kwip_picture_skip` filter does the same from code:
+Add `data-kwip-skip` to an `<img>` to leave that image alone in the page method. Everything else goes through hooks:
+
+| Hook | Type | Arguments | What it does |
+|---|---|---|---|
+| `kwip_convert_file` | filter | `$convert, $path, $attachment_id` | Return `false` to leave one file as it is. It is recorded as skipped, and any WebP made for it earlier is removed. To exclude a whole image, return `false` for every file of that attachment. |
+| `kwip_webp_quality` | filter | `$quality, $path, $format` | Change the WebP quality for one file. Values outside 1 to 100 are clamped. |
+| `kwip_attachment_processed` | action | `$attachment_id, $record` | Fires after an image has been processed. `$record['status']` is `converted`, `partial`, `skipped` or `failed`. Useful for purging a CDN. |
+| `kwip_attachment_restored` | action | `$attachment_id, $removed` | Fires after the WebP files of an image were removed. |
+| `kwip_picture_enabled` | filter | `$enabled` | Return `false` to switch the page method off for the current page. Runs on `template_redirect`. |
+| `kwip_picture_skip` | filter | `$skip, $tag, $attrs` | Return `true` to leave one `<img>` unwrapped. |
 
 ```php
+// Leave featured images alone in the page method.
 add_filter( 'kwip_picture_skip', function ( $skip, $tag, $attrs ) {
-	return $skip || str_contains( $attrs['class'] ?? '', 'wp-post-image' );
+    return $skip || str_contains( $attrs['class'] ?? '', 'wp-post-image' );
 }, 10, 3 );
+
+// Never convert files whose name starts with "logo-".
+add_filter( 'kwip_convert_file', function ( $convert, $path ) {
+    return $convert && ! str_starts_with( wp_basename( $path ), 'logo-' );
+}, 10, 2 );
 ```
 
 ### Tests

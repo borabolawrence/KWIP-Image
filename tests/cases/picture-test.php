@@ -131,4 +131,22 @@ return array(
 		$json = '{"html":"<img src=\"x.jpg\">"}' . str_repeat( ' ', 300 );
 		KT::same( $json, KWIP_Picture::process( $json ), 'JSON is not touched' );
 	},
+		'the kwip_picture_enabled filter can switch the page method off' => static function () {
+		KT::settings(
+			array(
+				'delivery' => 'webp_fallback',
+				'method'   => 'page',
+			)
+		);
+		$should_run = new ReflectionMethod( 'KWIP_Picture', 'should_run' );
+		if ( true !== $should_run->invoke( null ) ) {
+			KT::skip( 'The page method does not run in this command-line setup.' );
+		}
+
+		add_filter( 'kwip_picture_enabled', '__return_false' );
+		$off = $should_run->invoke( null );
+		remove_filter( 'kwip_picture_enabled', '__return_false' );
+
+		KT::same( false, $off, 'the filter switches the page method off' );
+	},
 );

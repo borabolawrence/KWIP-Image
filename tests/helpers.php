@@ -241,7 +241,16 @@ final class KT {
 		}
 		imagefilledellipse( $image, (int) ( $width / 2 ), (int) ( $height / 2 ), (int) ( $width / 2 ), (int) ( $height / 2 ), imagecolorallocate( $image, 200, 30, 30 ) );
 
-		if ( 'jpeg' === $kind ) {
+		if ( 'jpeg-noise' === $kind ) {
+			mt_srand( 42 );
+			for ( $i = 0; $i < 4000; $i++ ) {
+				$x = mt_rand( 0, $width - 10 );
+				$y = mt_rand( 0, $height - 10 );
+				imagefilledrectangle( $image, $x, $y, $x + mt_rand( 2, 8 ), $y + mt_rand( 2, 8 ), imagecolorallocate( $image, mt_rand( 0, 255 ), mt_rand( 0, 255 ), mt_rand( 0, 255 ) ) );
+			}
+		}
+
+		if ( str_starts_with( $kind, 'jpeg' ) ) {
 			imagejpeg( $image, $path, 95 );
 		} else {
 			imagepng( $image, $path );
@@ -258,13 +267,13 @@ final class KT {
 	/** A real image attachment with all its thumbnail sizes. Removed at the end. */
 	public static function attachment( string $kind = 'jpeg', int $width = 1200, int $height = 800 ): int {
 		$dir  = wp_upload_dir();
-		$name = wp_unique_filename( $dir['path'], 'kwip-test-' . wp_generate_password( 6, false ) . ( 'jpeg' === $kind ? '.jpg' : '.png' ) );
+		$name = wp_unique_filename( $dir['path'], 'kwip-test-' . wp_generate_password( 6, false ) . ( str_starts_with( $kind, 'jpeg' ) ? '.jpg' : '.png' ) );
 		$path = trailingslashit( $dir['path'] ) . $name;
 		self::write_image( $kind, $path, $width, $height );
 
 		$id = (int) wp_insert_attachment(
 			array(
-				'post_mime_type' => 'jpeg' === $kind ? 'image/jpeg' : 'image/png',
+				'post_mime_type' => str_starts_with( $kind, 'jpeg' ) ? 'image/jpeg' : 'image/png',
 				'post_title'     => 'KWIP TEST ' . $name,
 				'post_status'    => 'inherit',
 			),

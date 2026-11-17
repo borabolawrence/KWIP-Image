@@ -443,6 +443,7 @@ final class KWIP_Media {
 			'kwip_format_disabled' => __( 'this image type is turned off in Settings.', 'kwip-image-plugin' ),
 			'kwip_unsupported'     => __( 'not a supported JPEG or PNG image.', 'kwip-image-plugin' ),
 			'kwip_animated'        => __( 'animated images are left unchanged.', 'kwip-image-plugin' ),
+			'kwip_excluded'        => __( 'excluded by a filter.', 'kwip-image-plugin' ),
 		);
 		if ( isset( $labels[ $code ] ) ) {
 			return $labels[ $code ];
