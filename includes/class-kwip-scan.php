@@ -609,13 +609,24 @@ final class KWIP_Scan {
 		$width  = self::dimension( $el->getAttribute( 'width' ) );
 		$height = self::dimension( $el->getAttribute( 'height' ) );
 		if ( ( null !== $width && $width <= 2 ) || ( null !== $height && $height <= 2 ) ) {
-			return null; // Tracking pixels.
+			return null;
+		}
+
+		$picture = null;
+		for ( $node = $el->parentNode; $node instanceof DOMElement; $node = $node->parentNode ) {
+			$name = strtolower( $node->nodeName );
+			if ( 'picture' === $name ) {
+				$picture = $node;
+				break;
+			}
+			if ( 'source' !== $name ) {
+				break;
+			}
 		}
 
 		$picture_webp = false;
-		$parent       = $el->parentNode;
-		if ( $parent instanceof DOMElement && 'picture' === strtolower( $parent->nodeName ) ) {
-			foreach ( $parent->getElementsByTagName( 'source' ) as $source ) {
+		if ( null !== $picture ) {
+			foreach ( $picture->getElementsByTagName( 'source' ) as $source ) {
 				$type = strtolower( $source->getAttribute( 'type' ) );
 				$set  = $source->getAttribute( 'srcset' );
 				if ( 'image/webp' === $type || preg_match( '/\.webp(?:\s|,|\?|$)/i', $set ) ) {
@@ -625,6 +636,8 @@ final class KWIP_Scan {
 			}
 		}
 
+		list( $place, $hint ) = self::locate( $el );
+
 		$alt = 'missing';
 		if ( $el->hasAttribute( 'alt' ) ) {
 			$alt = '' === trim( $el->getAttribute( 'alt' ) ) ? 'empty' : 'ok';
@@ -633,6 +646,8 @@ final class KWIP_Scan {
 		return array(
 			'url'          => $url,
 			'kind'         => 'img',
+			'place'        => $place,
+			'hint'         => $hint,
 			'width'        => $width,
 			'height'       => $height,
 			'alt'          => $alt,
